@@ -1,0 +1,26 @@
+{
+	"includes": "io.github.ryan-za~elasticsearch-resources~0.2.3-SNAPSHOT",
+	
+	"description": "An asynchronous POJO-to-ElasticSearch library for Java. Allows for quick and easy saving, loading and searching of any regular java POJO with support for complex object graphs and polymorphism.",
+	"licenses": 
+	[
+		"The Apache Software License Version 2.0"
+	],
+
+	"author": "RyanZA",
+	"developers": 
+	[
+		"RyanZA"
+	],
+
+	"keywords": 
+	[
+		"elasticsearch",
+		"database",
+		"orm",
+		"java"
+	],
+
+	"homepage": "http://ryan-za.github.io/async-elastic-orm/",
+	"auto-redeploy": true
+}
