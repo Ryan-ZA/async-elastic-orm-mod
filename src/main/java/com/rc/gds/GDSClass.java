@@ -1,5 +1,6 @@
 package com.rc.gds;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -10,13 +11,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.rc.gds.annotation.PostSave;
+import com.rc.gds.annotation.PreDelete;
 import com.rc.gds.annotation.PreSave;
 
 public class GDSClass {
 
 	/**
-	 * Includes a list of all superclasses of the class, and the class itself.
-	 * Used for filtering.
+	 * Includes a list of all superclasses of the class, and the class itself. Used for filtering.
 	 */
 	public static final String GDS_FILTERCLASS_FIELD = "__GDS_FILTERCLASS_FIELD";
 	/**
@@ -25,13 +27,14 @@ public class GDSClass {
 	public static final String GDS_CLASS_FIELD = "__GDS_CLASS_FIELD";
 
 	/**
-	 * If this field exists in an Entity, then the field is a Map. Maps are
-	 * stored as K0=Key1,V0=Value1,K1=Key2,V1=Value2,...
+	 * If this field exists in an Entity, then the field is a Map. Maps are stored as K0=Key1,V0=Value1,K1=Key2,V1=Value2,...
 	 */
 	public static final String GDS_MAP_FIELD = "__GDS_MAP_FIELD";
 
 	static final Map<Class<?>, Boolean> hasIdFieldMap = new ConcurrentHashMap<Class<?>, Boolean>();
 	static final Map<Class<?>, Method> hasPreSaveMap = new ConcurrentHashMap<Class<?>, Method>();
+	static final Map<Class<?>, Method> hasPostSaveMap = new ConcurrentHashMap<Class<?>, Method>();
+	static final Map<Class<?>, Method> hasPreDeleteMap = new ConcurrentHashMap<Class<?>, Method>();
 	
 	static final Method nullMethod = GDSClass.class.getDeclaredMethods()[0];
 
@@ -99,30 +102,42 @@ public class GDSClass {
 			//System.out.println("Error trying to makeConstructorsPublic for class: " + clazz + " " + ex.toString());
 		}
 	}
-
-	public static void onPreSave(Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		Method preSaveMethod = hasPreSaveMap.get(pojo.getClass());
+	
+	private static void callAnnotatedMethod(Class<? extends Annotation> annotation, Map<Class<?>, Method> annotationMap, Object pojo) throws IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException {
+		Method callMethod = annotationMap.get(pojo.getClass());
 		
-		if (preSaveMethod == null) {
+		if (callMethod == null) {
 			for (Method method : pojo.getClass().getMethods()) {
-				PreSave preSave = method.getAnnotation(PreSave.class);
-				if (preSave != null) {
-					preSaveMethod = method;
-					preSaveMethod.setAccessible(true);
+				if (method.getAnnotation(annotation) != null) {
+					callMethod = method;
+					callMethod.setAccessible(true);
 					break;
 				}
 			}
 			
-			if (preSaveMethod == null)
-				preSaveMethod = nullMethod;
+			if (callMethod == null)
+				callMethod = nullMethod;
 			
-			hasPreSaveMap.put(pojo.getClass(), preSaveMethod);
+			annotationMap.put(pojo.getClass(), callMethod);
 		}
 		
-		if (preSaveMethod == nullMethod)
+		if (callMethod == nullMethod)
 			return;
 		
-		preSaveMethod.invoke(pojo);
+		callMethod.invoke(pojo);
+	}
+	
+	public static void onPreSave(Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		callAnnotatedMethod(PreSave.class, hasPreSaveMap, pojo);
+	}
+	
+	public static void onPostSave(Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		callAnnotatedMethod(PostSave.class, hasPostSaveMap, pojo);
+	}
+	
+	public static void onPreDelete(Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		callAnnotatedMethod(PreDelete.class, hasPreDeleteMap, pojo);
 	}
 
 }

@@ -428,6 +428,7 @@ public class GDSSaver {
 								GDSField verField = fieldMap.get(GDSField.GDS_VERSION_FIELD);
 								if (verField != null)
 									verField.field.setLong(pojo, key.version);
+								GDSClass.onPostSave(pojo);
 								callback.onSuccess(key, err);
 							} catch (Throwable e) {
 								callback.onSuccess(null, e);

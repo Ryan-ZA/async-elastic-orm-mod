@@ -1,5 +1,6 @@
 package com.rc.gds;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,14 +22,15 @@ public class GDSDeleter {
 	
 	public GDSResult<Boolean> delete(Object o) {
 		try {
+			GDSClass.onPreDelete(o);
 			String id = GDSField.getID(o);
 			return delete(o.getClass(), id);
-		} catch (IllegalArgumentException | IllegalAccessException e) {
+		} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
 			throw new RuntimeException("Reflection error", e);
 		}
 	}
 
-	public GDSResult<Boolean> delete(Class<?> clazz, String id) {
+	protected GDSResult<Boolean> delete(Class<?> clazz, String id) {
 		if (id == null)
 			throw new NullPointerException("delete id cannot be null");
 		
@@ -59,6 +61,7 @@ public class GDSDeleter {
 			Set<String> kinds = new HashSet<>();
 			
 			for (Object o : iterable) {
+				GDSClass.onPreDelete(o);
 				String id = GDSField.getID(o);
 				String kind = GDSClass.fixName(GDSClass.getBaseClass(o.getClass()).getName());
 				
@@ -84,12 +87,12 @@ public class GDSDeleter {
 					});
 			
 			return callback;
-		} catch (IllegalArgumentException | IllegalAccessException e) {
+		} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
 			throw new RuntimeException("Reflection error", e);
 		}
 	}
 	
-	public GDSResult<Boolean> deleteAll(Class<?> clazz, List<String> ids) {
+	protected GDSResult<Boolean> deleteAll(Class<?> clazz, List<String> ids) {
 		
 		final GDSAsyncImpl<Boolean> callback = new GDSAsyncImpl<>();
 		
