@@ -12,18 +12,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.rc.gds.TestSubClass.TheSubClass;
+import com.rc.gds.interfaces.GDS;
 import com.rc.gds.interfaces.GDSResult;
 
 public class BasicTest {
 
 	private static GDS getGDS() {
-		return new GDS(false, "gdstest");
+		return new GDSImpl(false, "gdstest");
 	}
 
 	@Before
 	public void testSetup() {
 		try {
-			getGDS().client.admin().indices().prepareDelete().execute().actionGet();
+			getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
 		} catch (Exception ex) {
 		}
 		getGDS();
@@ -33,9 +34,13 @@ public class BasicTest {
 	public void testCleanup() {
 		try {
 			Thread.sleep(50);
-			getGDS().client.admin().indices().prepareDelete().execute().actionGet();
+			getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
 		} catch (Exception ex) {
 		}
+	}
+	
+	private void refreshIndex() {
+		getGDS().getClient().admin().indices().prepareRefresh().execute().actionGet();
 	}
 
 	@Test
@@ -205,10 +210,6 @@ public class BasicTest {
 		
 		Assert.assertEquals(loadChildPoly1.id, loadChildPoly2.id);
 		Assert.assertEquals(loadChildPoly1.bytes.get(2), loadChildPoly2.bytes.get(2));
-	}
-
-	private void refreshIndex() {
-		getGDS().client.admin().indices().prepareRefresh().execute().actionGet();
 	}
 
 	@Test

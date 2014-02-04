@@ -6,29 +6,43 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.node.Node;
 
 import com.rc.es.ESClientHolder;
+import com.rc.gds.interfaces.GDS;
+import com.rc.gds.interfaces.GDSDeleter;
+import com.rc.gds.interfaces.GDSLoader;
+import com.rc.gds.interfaces.GDSQuery;
+import com.rc.gds.interfaces.GDSSaver;
 
 /**
  * 
  * Main class for GDS. A new instance of GDS should be created for every transaction and discarded afterwards.
  * 
  */
-public class GDS {
+public class GDSImpl implements GDS {
 	
-	Client client;
-	String cluster;
+	private Client client;
+	
+	//private String cluster;
 
-	public GDS(boolean isclient) {
+	public GDSImpl(boolean isclient) {
 		client = ESClientHolder.getClient(isclient, "gloopsh");
 	}
 	
-	public GDS(boolean isclient, String cluster) {
+	public GDSImpl(boolean isclient, String cluster) {
 		client = ESClientHolder.getClient(isclient, cluster);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#indexFor(java.lang.String)
+	 */
+	@Override
 	public String indexFor(String kind) {
 		return kind.toLowerCase(Locale.US);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#indexFor(java.lang.String[])
+	 */
+	@Override
 	public String[] indexFor(String[] kinds) {
 		String[] index = new String[kinds.length];
 		for (int i = 0; i < kinds.length; i++)
@@ -36,70 +50,75 @@ public class GDS {
 		return index;
 	}
 
-	/**
-	 * @return A new GDSLoader that can be used to load pojos IFF you have the ID or Key of the pojo.
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#load()
 	 */
+	@Override
 	public GDSLoader load() {
-		return new GDSLoader(this);
+		return new GDSLoaderImpl(this);
 	}
 
-	/**
-	 * @return A new GDSSaver that can be used to save any collection of pojos.
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#save(java.lang.Object)
 	 */
+	@Override
 	public GDSSaver save(Object o) {
-		GDSSaver gdsSaver = new GDSSaver(this);
+		GDSSaver gdsSaver = new GDSSaverImpl(this);
 		return gdsSaver.entity(o);
 	}
 	
-	/**
-	 * @return A new GDSSaver that can be used to save any collection of pojos.
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#save()
 	 */
+	@Override
 	public GDSSaver save() {
-		return new GDSSaver(this);
+		return new GDSSaverImpl(this);
 	}
 	
-	/**
-	 * 
-	 * @return A new GDSDelete that can be used to delete pojos from the datastore
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#delete()
 	 */
+	@Override
 	public GDSDeleter delete() {
-		return new GDSDeleter(this);
+		return new GDSDeleterImpl(this);
 	}
 
-	/**
-	 * @param clazz
-	 *            The class of pojos to search for. All subclasses of this type will also be searched for.
-	 * @return A new parametrized GDSQuery that can be used to search for specific kinds of pojos. Filters and sorting are available.
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#query(java.lang.Class)
 	 */
+	@Override
 	public <T> GDSQuery<T> query(Class<T> clazz) {
-		return new GDSQuery<T>(this, clazz);
+		return new GDSQueryImpl<T>(this, clazz);
 	}
 
-	/**
-	 * Begin a transaction that will last until commitTransaction() or rollbackTransaction() is called. You must call one of these when you
-	 * have finished the transaction. The transaction will apply to all load() save() and query() calls from this GDS.
-	 * 
-	 * It is not required to call this to do simple operations - you only need to use this if you wish to commit/rollback all operations
-	 * done by this GDS.
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#beginTransaction()
 	 */
+	@Override
 	public void beginTransaction() {
 		//db.requestStart();
 	}
 
-	/**
-	 * Must call beginTransaction before using this or you will receive a NullPointerException.
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#commitTransaction()
 	 */
+	@Override
 	public void commitTransaction() {
 		//db.requestDone();
 	}
 
-	/**
-	 * Must call beginTransaction before using this or you will receive a NullPointerException.
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#rollbackTransaction()
 	 */
+	@Override
 	public void rollbackTransaction() {
 		//db.requestDone();
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDS#getClient()
+	 */
+	@Override
 	public Client getClient() {
 		return client;
 	}

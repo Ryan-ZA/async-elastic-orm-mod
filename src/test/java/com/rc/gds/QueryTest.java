@@ -10,16 +10,18 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.rc.gds.interfaces.GDS;
+
 public class QueryTest {
 
 	private static GDS getGDS() {
-		return new GDS(false, "gdstest");
+		return new GDSImpl(false, "gdstest");
 	}
 	
 	@BeforeClass
 	public static void testSetup() {
 		try {
-			getGDS().client.admin().indices().prepareDelete().execute().actionGet();
+			getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
 		} catch (Exception ex) {
 		}
 		getGDS();
@@ -27,11 +29,11 @@ public class QueryTest {
 	
 	@After
 	public void testCleanup() {
-		getGDS().client.admin().indices().prepareDelete().execute().actionGet();
+		getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
 	}
 	
 	private void refreshIndex() {
-		getGDS().client.admin().indices().prepareRefresh().execute().actionGet();
+		getGDS().getClient().admin().indices().prepareRefresh().execute().actionGet();
 	}
 
 	@Test

@@ -11,7 +11,10 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilder;
 
-public class GDSQuery<T> {
+import com.rc.gds.interfaces.GDS;
+import com.rc.gds.interfaces.GDSQuery;
+
+public class GDSQueryImpl<T> implements GDSQuery<T> {
 
 	GDS gds;
 	Class<T> clazz;
@@ -23,7 +26,7 @@ public class GDSQuery<T> {
 	int skip = 0;
 	int size = 1000;
 
-	protected GDSQuery(GDS gds, Class<T> clazz) {
+	protected GDSQueryImpl(GDS gds, Class<T> clazz) {
 		this.gds = gds;
 		this.clazz = clazz;
 		
@@ -34,12 +37,10 @@ public class GDSQuery<T> {
 				FilterBuilders.queryFilter(QueryBuilders.fieldQuery(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName()))));
 	}
 	
-	/**
-	 * Add a filter to this query. Read GAE documentation on datastore queries for more information.
-	 * 
-	 * @param filter
-	 * @return
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#filter(org.elasticsearch.index.query.QueryBuilder)
 	 */
+	@Override
 	public GDSQuery<T> filter(QueryBuilder query) {
 		if (boolquery == null)
 			boolquery = QueryBuilders.boolQuery();
@@ -73,57 +74,49 @@ public class GDSQuery<T> {
 		}
 	}
 	
-	/**
-	 * 
-	 * Create a datastore filter that will match a field equal to a pojo. This filter will then filter out all entities that do not have the
-	 * specified field set to the pojo. Pojo matches are done on pojo type + id - none of the other member fields count towards the match.
-	 * 
-	 * @param field
-	 * @param pojo
-	 * @return this (for chaining)
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#filter(java.lang.String, java.lang.Object)
 	 */
+	@Override
 	public GDSQuery<T> filter(String field, Object pojo) {
 		filter(createPojoFilter(field, null, pojo));
 		return this;
 	}
 	
-	/**
-	 * Adds a sort to this query. Check out datastore documentation on sorting.
-	 * 
-	 * @param field
-	 * @param direction
-	 * @return this (for chaining)
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#sort(org.elasticsearch.search.sort.SortBuilder)
 	 */
+	@Override
 	public GDSQuery<T> sort(SortBuilder sortBuilder) {
 		sort = sortBuilder;
 		return this;
 	}
 	
-	/**
-	 * 
-	 * @return this (for chaining)
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#keysOnly()
 	 */
+	@Override
 	public GDSQuery<T> keysOnly() {
 		// Null op
 		return this;
 	}
 	
-	/**
-	 * Can be set with a cursor to continue a previous query. Can be passed a null cursor, will be a NO-OP.
-	 * 
-	 * @param cursor
-	 *            A cursor string from a previous query. Should be safe to pass to clients as it cannot be modified, but it is possible to
-	 *            see class names and similar in the query (but no actual data). You should encrypt this cursor if this is a problem.
-	 * @return this (for chaining)
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#continueFrom(java.lang.String)
 	 */
+	@Override
 	public GDSQuery<T> continueFrom(String cursor) {
 		if (cursor != null)
 			skip = Integer.valueOf(cursor);
 		return this;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#result()
+	 */
+	@Override
 	public GDSQueryResultImpl<T> result() {
-		SearchRequestBuilder requestBuilder = gds.client.prepareSearch(gds.indexFor(collectionName));
+		SearchRequestBuilder requestBuilder = gds.getClient().prepareSearch(gds.indexFor(collectionName));
 		if (sort != null)
 			requestBuilder.addSort(sort);
 		
@@ -139,10 +132,18 @@ public class GDSQuery<T> {
 		return new GDSQueryResultImpl<T>(gds, clazz, searchResponse.getHits().iterator(), searchResponse);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#asList()
+	 */
+	@Override
 	public List<T> asList() {
 		return result().asList();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#size(int)
+	 */
+	@Override
 	public GDSQuery<T> size(int i) {
 		if (i > 1000)
 			throw new RuntimeException("Size cannot be bigger than 1000 (temporary limit)");
@@ -150,6 +151,10 @@ public class GDSQuery<T> {
 		return this;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSQuery#skip(int)
+	 */
+	@Override
 	public GDSQuery<T> skip(int i) {
 		skip = i;
 		return this;

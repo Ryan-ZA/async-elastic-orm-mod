@@ -10,19 +10,25 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.index.query.QueryBuilders;
 
+import com.rc.gds.interfaces.GDS;
+import com.rc.gds.interfaces.GDSDeleter;
 import com.rc.gds.interfaces.GDSResult;
 
-public class GDSDeleter {
+public class GDSDeleterImpl implements GDSDeleter {
 	
 	GDS gds;
 	
-	GDSDeleter(GDS gds) {
+	GDSDeleterImpl(GDS gds) {
 		this.gds = gds;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSDeleter#delete(java.lang.Object)
+	 */
+	@Override
 	public GDSResult<Boolean> delete(Object o) {
 		try {
-			GDSClass.onPreDelete(o);
+			GDSClass.onPreDelete(gds, o);
 			String id = GDSField.getID(o);
 			return delete(o.getClass(), id);
 		} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
@@ -37,7 +43,7 @@ public class GDSDeleter {
 		final GDSAsyncImpl<Boolean> callback = new GDSAsyncImpl<>();
 
 		String kind = GDSClass.fixName(GDSClass.getBaseClass(clazz).getName());
-		gds.client.prepareDelete(gds.indexFor(kind), kind, id).execute(new ActionListener<DeleteResponse>() {
+		gds.getClient().prepareDelete(gds.indexFor(kind), kind, id).execute(new ActionListener<DeleteResponse>() {
 			
 			@Override
 			public void onResponse(DeleteResponse response) {
@@ -53,6 +59,10 @@ public class GDSDeleter {
 		return callback;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.rc.gds.GDSDeleter#deleteAll(java.lang.Iterable)
+	 */
+	@Override
 	public GDSResult<Boolean> deleteAll(Iterable<?> iterable) {
 		try {
 			final GDSAsyncImpl<Boolean> callback = new GDSAsyncImpl<>();
@@ -61,7 +71,7 @@ public class GDSDeleter {
 			Set<String> kinds = new HashSet<>();
 			
 			for (Object o : iterable) {
-				GDSClass.onPreDelete(o);
+				GDSClass.onPreDelete(gds, o);
 				String id = GDSField.getID(o);
 				String kind = GDSClass.fixName(GDSClass.getBaseClass(o.getClass()).getName());
 				
@@ -72,7 +82,7 @@ public class GDSDeleter {
 			String[] kindsArr = kinds.toArray(new String[kinds.size()]);
 			String[] idArr = ids.toArray(new String[ids.size()]);
 			
-			gds.client.prepareDeleteByQuery(gds.indexFor(kindsArr))
+			gds.getClient().prepareDeleteByQuery(gds.indexFor(kindsArr))
 					.setQuery(QueryBuilders.idsQuery(kindsArr).ids(idArr)).execute(new ActionListener<DeleteByQueryResponse>() {
 						
 						@Override
@@ -98,7 +108,7 @@ public class GDSDeleter {
 		
 		String kind = GDSClass.fixName(GDSClass.getBaseClass(clazz).getName());
 		String[] idArr = ids.toArray(new String[ids.size()]);
-		gds.client.prepareDeleteByQuery(gds.indexFor(kind))
+		gds.getClient().prepareDeleteByQuery(gds.indexFor(kind))
 				.setQuery(QueryBuilders.idsQuery(kind).ids(idArr)).execute(new ActionListener<DeleteByQueryResponse>() {
 					
 					@Override
