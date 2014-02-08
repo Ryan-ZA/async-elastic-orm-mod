@@ -440,5 +440,30 @@ public class QueryTest {
 		
 		Assert.assertEquals(0, sr.getHits().getHits().length);
 	}
+	
+	@Test
+	public void testFacetChildren() {
+		TestChild testChild = new TestChild();
+
+		for (int i = 0; i < 50; i++) {
+			TestParent testParent = new TestParent();
+			testParent.testChild = testChild;
+			getGDS().save().entity(testParent).now();
+		}
+		
+		refreshIndex();
+
+		SearchResponse sr = getGDS().getClient().prepareSearch(getGDS().indexFor(GDSClass.getKind(TestParent.class)))
+				.addFacet(FacetBuilders.termsFacet("test1").scriptField("_source.testChild.id"))
+				.setQuery(QueryBuilders.matchAllQuery())
+				.setSize(0)
+				.get();
+		
+		TermsFacet termsFacet = sr.getFacets().facet(TermsFacet.class, "test1");
+
+		Assert.assertEquals(1, termsFacet.getEntries().size());
+		
+		Assert.assertEquals(0, sr.getHits().getHits().length);
+	}
 
 }
