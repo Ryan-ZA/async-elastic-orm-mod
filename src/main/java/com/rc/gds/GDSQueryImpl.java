@@ -30,7 +30,7 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		this.gds = gds;
 		this.clazz = clazz;
 		
-		collectionName = GDSClass.fixName(GDSClass.getBaseClass(clazz).getName());
+		collectionName = GDSClass.getKind(clazz);
 
 		filter = FilterBuilders.andFilter(
 				FilterBuilders.typeFilter(collectionName),
@@ -68,7 +68,7 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 			// Get the ID and create the low level entity
 			String id = (String) GDSField.getValue(idField, pojo);
 			
-			return QueryBuilders.fieldQuery(field + ".id", id);
+			return QueryBuilders.matchPhraseQuery(field + ".id", id);
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}

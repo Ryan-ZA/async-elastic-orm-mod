@@ -3,8 +3,11 @@ package com.rc.gds;
 import java.util.Arrays;
 import java.util.List;
 
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.facet.FacetBuilders;
+import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -414,6 +417,28 @@ public class QueryTest {
 				.filter(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.scriptFilter(script)))
 				.asList().size());
 		
+	}
+	
+	@Test
+	public void testFacet() {
+		for (int i = 0; i < 50; i++) {
+			TestParent testParent = new TestParent();
+			testParent.name = "bla" + i / 10;
+			getGDS().save().entity(testParent).now();
+		}
+		
+		refreshIndex();
+
+		SearchResponse sr = getGDS().getClient().prepareSearch(getGDS().indexFor(GDSClass.getKind(TestParent.class)))
+				.addFacet(FacetBuilders.termsFacet("test1").field("name"))
+				.setQuery(QueryBuilders.matchAllQuery())
+				.setSize(0)
+				.get();
+		
+		TermsFacet termsFacet = sr.getFacets().facet(TermsFacet.class, "test1");
+		Assert.assertEquals(5, termsFacet.getEntries().size());
+		
+		Assert.assertEquals(0, sr.getHits().getHits().length);
 	}
 
 }

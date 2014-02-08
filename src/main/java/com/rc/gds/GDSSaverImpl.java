@@ -319,7 +319,7 @@ public class GDSSaverImpl implements GDSSaver {
 	}
 
 	private void createKeyForRegularPOJO(final Object fieldValue, final GDSCallback<Key> callback) throws IllegalArgumentException, IllegalAccessException {
-		String kind = GDSClass.fixName(GDSClass.getBaseClass(fieldValue.getClass()).getName());
+		final String fieldValueKind = GDSClass.getKind(fieldValue);
 		Map<String, GDSField> map = GDSField.createMapFromObject(fieldValue);
 		final GDSField idfield = map.get(GDSField.GDS_ID_FIELD);
 		Object idFieldValue = GDSField.getValue(idfield, fieldValue);
@@ -327,7 +327,7 @@ public class GDSSaverImpl implements GDSSaver {
 		if (recursiveUpdate || id == null || fieldValue.getClass().isAnnotationPresent(AlwaysPersist.class)) {
 			if (alreadyStoredObjects.contains(fieldValue)) {
 				// We've already saved this object from this call, no need to save it again
-				callback.onSuccess(new Key(kind, id), null);
+				callback.onSuccess(new Key(fieldValueKind, id), null);
 			} else {
 				alreadyStoredObjects.add(fieldValue);
 				GDSSaverImpl saver = new GDSSaverImpl(this);
@@ -343,8 +343,7 @@ public class GDSSaverImpl implements GDSSaver {
 					public void onSuccess(Key key, Throwable err) {
 						try {
 							String id = (String) GDSField.getValue(idfield, fieldValue);
-							String kind = GDSClass.fixName(GDSClass.getBaseClass(fieldValue.getClass()).getName());
-							callback.onSuccess(new Key(kind, id), err);
+							callback.onSuccess(new Key(fieldValueKind, id), err);
 						} catch (Throwable e) {
 							callback.onSuccess(null, e);
 						}
@@ -352,7 +351,7 @@ public class GDSSaverImpl implements GDSSaver {
 				});
 			}
 		} else {
-			callback.onSuccess(new Key(kind, id), null);
+			callback.onSuccess(new Key(fieldValueKind, id), null);
 		}
 	}
 

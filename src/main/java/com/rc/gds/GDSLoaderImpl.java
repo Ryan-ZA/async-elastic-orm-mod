@@ -43,7 +43,7 @@ public class GDSLoaderImpl implements GDSLoader {
 		try {
 			final GDSAsyncImpl<T> callback = new GDSAsyncImpl<>();
 
-			final String kind = GDSClass.fixName(GDSClass.getBaseClass(clazz).getName());
+			final String kind = GDSClass.getKind(clazz);
 			final Key key = new Key(kind, id);
 
 			if (localCache.containsKey(key)) {

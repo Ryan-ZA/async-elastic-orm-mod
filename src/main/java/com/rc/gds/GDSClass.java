@@ -48,6 +48,14 @@ public class GDSClass {
 		return list;
 	}
 	
+	public static String getKind(Class<?> clazz) {
+		return GDSClass.fixName(GDSClass.getBaseClass(clazz).getName());
+	}
+	
+	public static String getKind(Object o) {
+		return GDSClass.fixName(GDSClass.getBaseClass(o.getClass()).getName());
+	}
+
 	public static String fixName(String classname) {
 		return classname.replace("_", "##").replace(".", "_");
 	}

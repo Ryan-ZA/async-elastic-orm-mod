@@ -42,7 +42,7 @@ public class GDSDeleterImpl implements GDSDeleter {
 		
 		final GDSAsyncImpl<Boolean> callback = new GDSAsyncImpl<>();
 
-		String kind = GDSClass.fixName(GDSClass.getBaseClass(clazz).getName());
+		String kind = GDSClass.getKind(clazz);
 		gds.getClient().prepareDelete(gds.indexFor(kind), kind, id).execute(new ActionListener<DeleteResponse>() {
 			
 			@Override
@@ -73,7 +73,7 @@ public class GDSDeleterImpl implements GDSDeleter {
 			for (Object o : iterable) {
 				GDSClass.onPreDelete(gds, o);
 				String id = GDSField.getID(o);
-				String kind = GDSClass.fixName(GDSClass.getBaseClass(o.getClass()).getName());
+				String kind = GDSClass.getKind(o);
 				
 				ids.add(id);
 				kinds.add(kind);
@@ -106,7 +106,7 @@ public class GDSDeleterImpl implements GDSDeleter {
 		
 		final GDSAsyncImpl<Boolean> callback = new GDSAsyncImpl<>();
 		
-		String kind = GDSClass.fixName(GDSClass.getBaseClass(clazz).getName());
+		String kind = GDSClass.getKind(clazz);
 		String[] idArr = ids.toArray(new String[ids.size()]);
 		gds.getClient().prepareDeleteByQuery(gds.indexFor(kind))
 				.setQuery(QueryBuilders.idsQuery(kind).ids(idArr)).execute(new ActionListener<DeleteByQueryResponse>() {
