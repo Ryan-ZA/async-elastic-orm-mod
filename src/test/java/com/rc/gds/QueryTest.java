@@ -23,16 +23,12 @@ public class QueryTest {
 	
 	@BeforeClass
 	public static void testSetup() {
-		try {
-			getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
-		} catch (Exception ex) {
-		}
-		getGDS();
+		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
 	}
 	
 	@After
 	public void testCleanup() {
-		getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
+		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
 	}
 	
 	private void refreshIndex() {
@@ -284,21 +280,21 @@ public class QueryTest {
 				.filter("testChild", testParentPoly.testChild)
 				.asList().size());
 		Assert.assertEquals(1, getGDS().query(TestParent.class)
-				.filter(QueryBuilders.fieldQuery("name", "bla"))
+				.filter(QueryBuilders.matchPhraseQuery("name", "bla"))
 				.asList().size());
 		Assert.assertEquals(1, getGDS().query(TestParent.class)
-				.filter(QueryBuilders.fieldQuery("name", "blu"))
+				.filter(QueryBuilders.matchPhraseQuery("name", "blu"))
 				.asList().size());
 		Assert.assertEquals(0, getGDS().query(TestParent.class)
-				.filter(QueryBuilders.fieldQuery("name", "na"))
+				.filter(QueryBuilders.matchPhraseQuery("name", "na"))
 				.asList().size());
 		Assert.assertEquals(0, getGDS().query(TestParent.class)
 				.filter("testChild", testParentPoly.testChild)
-				.filter(QueryBuilders.fieldQuery("name", "bla"))
+				.filter(QueryBuilders.matchPhraseQuery("name", "bla"))
 				.asList().size());
 		Assert.assertEquals(1, getGDS().query(TestParent.class)
 				.filter("testChild", testParentPoly.testChild)
-				.filter(QueryBuilders.fieldQuery("name", "blu"))
+				.filter(QueryBuilders.matchPhraseQuery("name", "blu"))
 				.asList().size());
 	}
 	

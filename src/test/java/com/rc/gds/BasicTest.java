@@ -23,20 +23,12 @@ public class BasicTest {
 
 	@Before
 	public void testSetup() {
-		try {
-			getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
-		} catch (Exception ex) {
-		}
-		getGDS();
+		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
 	}
 
 	@After
 	public void testCleanup() {
-		try {
-			Thread.sleep(50);
-			getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
-		} catch (Exception ex) {
-		}
+		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
 	}
 	
 	private void refreshIndex() {
@@ -231,6 +223,9 @@ public class BasicTest {
 		List<TestChild> list = getGDS().query(TestChild.class)
 				//.filter(FilterBuilders.termFilter("name", "child" + num))
 				.asList();
+		for (TestChild child : list) {
+			System.out.println(child.name);
+		}
 		Assert.assertEquals(1, list.size());
 		Assert.assertEquals(testChild.id, list.get(0).id);
 		Assert.assertEquals(testChild.name, list.get(0).name);
@@ -518,7 +513,10 @@ public class BasicTest {
 		Assert.assertEquals(key1.id, key2.id);
 		
 		testVersionedObject.ver = 1;
-		getGDS().save(testVersionedObject).now();
+		System.out.println("preid: " + testVersionedObject.id);
+		Key key = getGDS().save(testVersionedObject).now();
+		System.out.println("postid: " + testVersionedObject.id);
+		System.out.println("keyid: " + key.id);
 	}
 
 }

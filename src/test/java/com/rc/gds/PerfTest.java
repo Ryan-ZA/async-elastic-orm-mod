@@ -28,19 +28,12 @@ public class PerfTest {
 	
 	@Before
 	public void testSetup() {
-		try {
-			getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
-		} catch (Exception ex) {
-		}
-		getGDS();
+		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
 	}
 	
 	@After
 	public void testCleanup() {
-		try {
-			getGDS().getClient().admin().indices().prepareDelete().execute().actionGet();
-		} catch (Exception ex) {
-		}
+		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
 	}
 	
 	private void refreshIndex() {

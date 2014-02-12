@@ -22,7 +22,8 @@ public class GDSDeleterImpl implements GDSDeleter {
 		this.gds = gds;
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSDeleter#delete(java.lang.Object)
 	 */
 	@Override
@@ -47,7 +48,7 @@ public class GDSDeleterImpl implements GDSDeleter {
 			
 			@Override
 			public void onResponse(DeleteResponse response) {
-				callback.onSuccess(!response.isNotFound(), null);
+				callback.onSuccess(response.isFound(), null);
 			}
 			
 			@Override
@@ -59,7 +60,8 @@ public class GDSDeleterImpl implements GDSDeleter {
 		return callback;
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSDeleter#deleteAll(java.lang.Iterable)
 	 */
 	@Override

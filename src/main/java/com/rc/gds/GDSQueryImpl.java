@@ -5,8 +5,6 @@ import java.util.List;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -18,7 +16,6 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 
 	GDS gds;
 	Class<T> clazz;
-	FilterBuilder filter;
 	BoolQueryBuilder boolquery;
 	SortBuilder sort;
 	String collectionName;
@@ -31,20 +28,17 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		this.clazz = clazz;
 		
 		collectionName = GDSClass.getKind(clazz);
-
-		filter = FilterBuilders.andFilter(
-				FilterBuilders.typeFilter(collectionName),
-				FilterBuilders.queryFilter(QueryBuilders.fieldQuery(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName()))));
+		
+		boolquery = QueryBuilders.boolQuery();
+		boolquery.must(QueryBuilders.matchPhraseQuery(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName())));
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#filter(org.elasticsearch.index.query.QueryBuilder)
 	 */
 	@Override
 	public GDSQuery<T> filter(QueryBuilder query) {
-		if (boolquery == null)
-			boolquery = QueryBuilders.boolQuery();
-		
 		boolquery.must(query);
 		return this;
 	}
@@ -74,7 +68,8 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		}
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#filter(java.lang.String, java.lang.Object)
 	 */
 	@Override
@@ -83,7 +78,8 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		return this;
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#sort(org.elasticsearch.search.sort.SortBuilder)
 	 */
 	@Override
@@ -92,7 +88,8 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		return this;
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#keysOnly()
 	 */
 	@Override
@@ -101,7 +98,8 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		return this;
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#continueFrom(java.lang.String)
 	 */
 	@Override
@@ -111,18 +109,18 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		return this;
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#result()
 	 */
 	@Override
 	public GDSQueryResultImpl<T> result() {
 		SearchRequestBuilder requestBuilder = gds.getClient().prepareSearch(gds.indexFor(collectionName));
+		requestBuilder.setTypes(collectionName);
 		if (sort != null)
 			requestBuilder.addSort(sort);
 		
-		requestBuilder.setQuery(boolquery == null ? QueryBuilders.matchAllQuery() : boolquery);
-		if (filter != null)
-			requestBuilder.setFilter(filter);
+		requestBuilder.setQuery(boolquery);
 		
 		requestBuilder.setFrom(0);
 		requestBuilder.setSize(10000);
@@ -132,15 +130,17 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		return new GDSQueryResultImpl<T>(gds, clazz, searchResponse.getHits().iterator(), searchResponse);
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#asList()
 	 */
 	@Override
 	public List<T> asList() {
 		return result().asList();
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#size(int)
 	 */
 	@Override
@@ -151,7 +151,8 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		return this;
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSQuery#skip(int)
 	 */
 	@Override
