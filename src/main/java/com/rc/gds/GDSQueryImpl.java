@@ -5,6 +5,8 @@ import java.util.List;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -17,6 +19,8 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 	GDS gds;
 	Class<T> clazz;
 	BoolQueryBuilder boolquery;
+	FilterBuilder filter;
+
 	SortBuilder sort;
 	String collectionName;
 
@@ -29,8 +33,9 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		
 		collectionName = GDSClass.getKind(clazz);
 		
-		boolquery = QueryBuilders.boolQuery();
-		boolquery.must(QueryBuilders.matchPhraseQuery(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName())));
+		//filter = FilterBuilders.termFilter(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName()));
+		//filter = FilterBuilders.prefixFilter(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName()));
+		filter = FilterBuilders.queryFilter(QueryBuilders.matchPhraseQuery(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName())));
 	}
 	
 	/*
@@ -39,6 +44,9 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 	 */
 	@Override
 	public GDSQuery<T> filter(QueryBuilder query) {
+		if (boolquery == null)
+			boolquery = QueryBuilders.boolQuery();
+
 		boolquery.must(query);
 		return this;
 	}
@@ -120,7 +128,8 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		if (sort != null)
 			requestBuilder.addSort(sort);
 		
-		requestBuilder.setQuery(boolquery);
+		QueryBuilder basequery = boolquery == null ? QueryBuilders.matchAllQuery() : boolquery;
+		requestBuilder.setQuery(QueryBuilders.filteredQuery(basequery, filter));
 		
 		requestBuilder.setFrom(0);
 		requestBuilder.setSize(10000);
