@@ -9,5 +9,6 @@ public class TestParent {
 
 	String name;
 	TestChild testChild;
+	TestEnum enum1 = TestEnum.HELLO;
 
 }

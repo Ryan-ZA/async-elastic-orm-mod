@@ -23,8 +23,7 @@ public class GDSField {
 	public static final String GDS_VERSION_FIELD = "__GDS_VERSION_FIELD";
 
 	/**
-	 * https://developers.google.com/appengine/docs/java/datastore/entities?hl=
-	 * iw#Properties_and_Value_Types
+	 * https://developers.google.com/appengine/docs/java/datastore/entities?hl= iw#Properties_and_Value_Types
 	 */
 	static final Set<Class<?>> nonDSClasses = new HashSet<Class<?>>(Arrays.asList(
 			new Class<?>[] {
@@ -45,11 +44,9 @@ public class GDSField {
 	static final Map<Class<?>, Map<String, GDSField>> reflectionCache = new ConcurrentHashMap<Class<?>, Map<String, GDSField>>();
 
 	/**
-	 * Will return a new GDSField if field is an ID field (has @ID set or is
-	 * named 'id'). If field is a Long or Integer, it may be null and will be
-	 * generated. Otherwise, field cannot be null and will throw a null pointer
-	 * exception. If field is not a Long or Integer, toString() will be called
-	 * and this will be used as the key.
+	 * Will return a new GDSField if field is an ID field (has @ID set or is named 'id'). If field is a Long or Integer, it may be null and
+	 * will be generated. Otherwise, field cannot be null and will throw a null pointer exception. If field is not a Long or Integer,
+	 * toString() will be called and this will be used as the key.
 	 * 
 	 * @param field
 	 * @return
@@ -117,8 +114,11 @@ public class GDSField {
 			boolean hasIDField = GDSClass.hasIDField(fieldType);
 			gdsField.embedded = !hasIDField;
 		}
-
-		if (fieldType.isPrimitive()) {
+		
+		if (fieldType.isEnum()) {
+			gdsField.nonDatastoreObject = false;
+			gdsField.isEnum = true;
+		} else if (fieldType.isPrimitive()) {
 			gdsField.nonDatastoreObject = false;
 		} else if (fieldType.isEnum()) {
 			gdsField.isEnum = true;
@@ -133,8 +133,7 @@ public class GDSField {
 	}
 
 	/**
-	 * Creates a map of fieldnames to GDSFields. Used to store/load entities
-	 * from the datastore.
+	 * Creates a map of fieldnames to GDSFields. Used to store/load entities from the datastore.
 	 * 
 	 * @param obj
 	 *            Any POJO object
@@ -153,6 +152,8 @@ public class GDSField {
 
 		if (nonDSClasses.contains(clazz))
 			throw new RuntimeException("Trying to get fields from a native datastore class!");
+		if (clazz.isEnum())
+			throw new RuntimeException("Trying to get fields from enum!");
 
 		ArrayList<Field> fields = new ArrayList<Field>();
 		while (clazz != Object.class && clazz != null) {

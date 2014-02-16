@@ -220,6 +220,7 @@ public class GDSLoaderImpl implements GDSLoader {
 					}
 					
 				} catch (Throwable e) {
+					e.printStackTrace();
 					callback.onSuccess(null, e);
 				}
 			}
