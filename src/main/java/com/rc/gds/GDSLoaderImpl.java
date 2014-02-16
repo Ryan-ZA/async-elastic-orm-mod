@@ -179,7 +179,8 @@ public class GDSLoaderImpl implements GDSLoader {
 				try {
 					if (err != null)
 						throw err;
-					for (final Entry<Key, Entity> entry : dsMap.entrySet()) {
+					Map<Key, Entity> origMap = new HashMap<>(dsMap);
+					for (final Entry<Key, Entity> entry : origMap.entrySet()) {
 						Entity entity = entry.getValue();
 						final Key key = entry.getKey();
 
@@ -274,6 +275,9 @@ public class GDSLoaderImpl implements GDSLoader {
 			@Override
 			public void onSuccess(Map<Key, Object> fetched, Throwable err) {
 				try {
+					if (err != null)
+						throw err;
+
 					for (GDSLink link : linksToFetch) {
 						if (link.key != null) {
 							Object newPojo = fetched.get(link.key);
