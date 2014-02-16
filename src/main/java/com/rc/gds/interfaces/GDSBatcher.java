@@ -1,12 +1,9 @@
-package com.rc.gds;
+package com.rc.gds.interfaces;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.rc.gds.interfaces.GDSCallback;
-import com.rc.gds.interfaces.GDSMultiResult;
-import com.rc.gds.interfaces.GDSResult;
-import com.rc.gds.interfaces.GDSResultListReceiver;
+import com.rc.gds.GDSAsyncImpl;
 
 public class GDSBatcher {
 	

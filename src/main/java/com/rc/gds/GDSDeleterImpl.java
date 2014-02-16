@@ -10,15 +10,14 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse;
 import org.elasticsearch.index.query.QueryBuilders;
 
-import com.rc.gds.interfaces.GDS;
 import com.rc.gds.interfaces.GDSDeleter;
 import com.rc.gds.interfaces.GDSResult;
 
 public class GDSDeleterImpl implements GDSDeleter {
 	
-	GDS gds;
+	GDSImpl gds;
 	
-	GDSDeleterImpl(GDS gds) {
+	GDSDeleterImpl(GDSImpl gds) {
 		this.gds = gds;
 	}
 	

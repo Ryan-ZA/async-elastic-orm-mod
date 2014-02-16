@@ -53,7 +53,7 @@ public class GDSClass {
 	}
 	
 	public static String getKind(Object o) {
-		return GDSClass.fixName(GDSClass.getBaseClass(o.getClass()).getName());
+		return getKind(o.getClass());
 	}
 
 	public static String fixName(String classname) {

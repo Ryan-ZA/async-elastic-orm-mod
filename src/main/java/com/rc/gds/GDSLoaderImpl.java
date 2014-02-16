@@ -19,22 +19,23 @@ import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
 
-import com.rc.gds.interfaces.GDS;
 import com.rc.gds.interfaces.GDSCallback;
 import com.rc.gds.interfaces.GDSLoader;
 import com.rc.gds.interfaces.GDSResult;
+import com.rc.gds.interfaces.Key;
 
 public class GDSLoaderImpl implements GDSLoader {
 
-	GDS gds;
+	GDSImpl gds;
 	private Map<Key, Object> localCache = Collections.synchronizedMap(new HashMap<Key, Object>());
 	private List<Key> alreadyFetching = new ArrayList<>();
 
-	protected GDSLoaderImpl(GDS gds) {
+	protected GDSLoaderImpl(GDSImpl gds) {
 		this.gds = gds;
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSLoader#fetch(java.lang.Class, java.lang.String)
 	 */
 	@Override
@@ -98,8 +99,9 @@ public class GDSLoaderImpl implements GDSLoader {
 			throw new RuntimeException(ex);
 		}
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSLoader#fetch(com.rc.gds.Key, com.rc.gds.interfaces.GDSCallback)
 	 */
 	@Override
@@ -144,8 +146,9 @@ public class GDSLoaderImpl implements GDSLoader {
 					}
 				});
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSLoader#fetchBatch(java.lang.Iterable, com.rc.gds.interfaces.GDSCallback)
 	 */
 	@Override
@@ -249,10 +252,6 @@ public class GDSLoaderImpl implements GDSLoader {
 		});
 	}
 
-	/* (non-Javadoc)
-	 * @see com.rc.gds.GDSLoader#fetchLinks(java.util.List, com.rc.gds.interfaces.GDSCallback)
-	 */
-	@Override
 	public void fetchLinks(final List<GDSLink> linksToFetch, final GDSCallback<List<GDSLink>> callback) throws IllegalArgumentException, IllegalAccessException,
 			ClassNotFoundException,
 			InstantiationException, InterruptedException, ExecutionException {
@@ -315,11 +314,16 @@ public class GDSLoaderImpl implements GDSLoader {
 			}
 		});
 	}
-
-	/* (non-Javadoc)
-	 * @see com.rc.gds.GDSLoader#entityToPOJO(com.rc.gds.PropertyContainer, java.lang.String, java.util.List, com.rc.gds.interfaces.GDSCallback)
+	
+	/**
+	 * Real logic for loading pojos from the datastore. Can be given a Entity or EmbeddedEntity, and if the entity is in the correct format
+	 * you will get back a POJO.
+	 * 
+	 * @param entity
+	 * @param id
+	 * @return
+	 * @throws Exception
 	 */
-	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void entityToPOJO(PropertyContainer entity, String id, final List<GDSLink> linksToFetch, final GDSCallback<Object> callback) throws ClassNotFoundException,
 			InstantiationException,

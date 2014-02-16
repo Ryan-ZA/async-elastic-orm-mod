@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.rc.gds.interfaces.Key;
+
 class Entity implements PropertyContainer, Serializable {
 
 	private static final long serialVersionUID = 1L;

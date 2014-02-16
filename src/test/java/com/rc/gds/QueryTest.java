@@ -13,11 +13,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.rc.gds.interfaces.GDS;
-
 public class QueryTest {
 
-	private static GDS getGDS() {
+	private static GDSImpl getGDS() {
 		return new GDSImpl(false, "gdstest");
 	}
 	

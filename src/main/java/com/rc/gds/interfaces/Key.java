@@ -1,15 +1,20 @@
-package com.rc.gds;
+package com.rc.gds.interfaces;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.elasticsearch.common.annotations.GwtIncompatible;
+
+import com.rc.gds.GDSClass;
+
+@GwtIncompatible("Cannot create keys on client yet")
 public class Key implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	String kind, id;
-	Long version;
+	public String kind, id;
+	public Long version;
 
 	public Key() {
 	}

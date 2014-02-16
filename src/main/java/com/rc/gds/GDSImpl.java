@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.node.Node;
@@ -18,6 +17,7 @@ import com.rc.gds.interfaces.GDSMultiResult;
 import com.rc.gds.interfaces.GDSQuery;
 import com.rc.gds.interfaces.GDSResult;
 import com.rc.gds.interfaces.GDSSaver;
+import com.rc.gds.interfaces.Key;
 
 /**
  * 
@@ -27,6 +27,7 @@ import com.rc.gds.interfaces.GDSSaver;
 public class GDSImpl implements GDS {
 	
 	private Client client;
+	private ESMapCreator mapCreator = new ESMapCreator(this);
 	
 	//private String cluster;
 
@@ -44,7 +45,9 @@ public class GDSImpl implements GDS {
 	 */
 	@Override
 	public String indexFor(String kind) {
-		return kind.toLowerCase(Locale.US);
+		String index = kind.toLowerCase(Locale.US);
+		mapCreator.ensureIndexCreated(index);
+		return index;
 	}
 	
 	/*
@@ -122,11 +125,6 @@ public class GDSImpl implements GDS {
 		//db.requestDone();
 	}
 	
-	/*
-	 * (non-Javadoc)
-	 * @see com.rc.gds.GDS#getClient()
-	 */
-	@Override
 	public Client getClient() {
 		return client;
 	}
@@ -205,7 +203,7 @@ public class GDSImpl implements GDS {
 					result.onSuccess(resultList, null);
 				}
 			});
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InterruptedException | ExecutionException e) {
+		} catch (Exception e) {
 			result.onSuccess(null, e);
 		}
 		

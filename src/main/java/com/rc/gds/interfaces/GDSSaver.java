@@ -1,6 +1,5 @@
 package com.rc.gds.interfaces;
 
-import com.rc.gds.Key;
 
 public interface GDSSaver {
 	

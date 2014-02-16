@@ -17,14 +17,14 @@ import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
 
 import com.rc.gds.annotation.AlwaysPersist;
-import com.rc.gds.interfaces.GDS;
 import com.rc.gds.interfaces.GDSCallback;
 import com.rc.gds.interfaces.GDSResult;
 import com.rc.gds.interfaces.GDSSaver;
+import com.rc.gds.interfaces.Key;
 
 public class GDSSaverImpl implements GDSSaver {
 
-	GDS gds;
+	GDSImpl gds;
 	Object pojo;
 	boolean recursiveUpdate;
 	Map<String, GDSField> fieldMap;
@@ -32,7 +32,7 @@ public class GDSSaverImpl implements GDSSaver {
 	List<Object> alreadyStoredObjects;
 	boolean isUpdate = true;
 
-	protected GDSSaverImpl(GDS gds) {
+	protected GDSSaverImpl(GDSImpl gds) {
 		this.gds = gds;
 		alreadyStoredObjects = Collections.synchronizedList(new ArrayList<Object>());
 	}

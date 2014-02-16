@@ -2,10 +2,6 @@ package com.rc.gds.interfaces;
 
 import java.util.List;
 
-import org.elasticsearch.client.Client;
-
-import com.rc.gds.Key;
-
 public interface GDS {
 	
 	/**
@@ -33,8 +29,6 @@ public interface GDS {
 	 * @return Delete a single pojo
 	 */
 	public abstract <T> GDSResult<Boolean> delete(T t);
-
-	public abstract Client getClient();
 	
 	public abstract String indexFor(String kind);
 	

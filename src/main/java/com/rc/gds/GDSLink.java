@@ -2,6 +2,8 @@ package com.rc.gds;
 
 import java.util.Collection;
 
+import com.rc.gds.interfaces.Key;
+
 public class GDSLink {
 
 	Object pojo;

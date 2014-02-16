@@ -11,12 +11,11 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortBuilder;
 
-import com.rc.gds.interfaces.GDS;
 import com.rc.gds.interfaces.GDSQuery;
 
 public class GDSQueryImpl<T> implements GDSQuery<T> {
 
-	GDS gds;
+	GDSImpl gds;
 	Class<T> clazz;
 	BoolQueryBuilder boolquery;
 	FilterBuilder filter;
@@ -27,14 +26,12 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 	int skip = 0;
 	int size = 1000;
 
-	protected GDSQueryImpl(GDS gds, Class<T> clazz) {
+	protected GDSQueryImpl(GDSImpl gds, Class<T> clazz) {
 		this.gds = gds;
 		this.clazz = clazz;
 		
 		collectionName = GDSClass.getKind(clazz);
 		
-		//filter = FilterBuilders.termFilter(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName()));
-		//filter = FilterBuilders.prefixFilter(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName()));
 		filter = FilterBuilders.queryFilter(QueryBuilders.matchPhraseQuery(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName())));
 	}
 	

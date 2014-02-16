@@ -2,11 +2,13 @@ package com.rc.gds.interfaces;
 
 import java.util.List;
 
+import org.elasticsearch.common.annotations.GwtIncompatible;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 
 import com.rc.gds.GDSQueryResultImpl;
 
+@GwtIncompatible("GDS queries only allowed from server")
 public interface GDSQuery<T> {
 	
 	/**

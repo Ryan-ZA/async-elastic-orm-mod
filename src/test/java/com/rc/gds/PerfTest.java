@@ -17,12 +17,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.rc.gds.interfaces.GDS;
+import com.rc.gds.interfaces.GDSBatcher;
 import com.rc.gds.interfaces.GDSResult;
+import com.rc.gds.interfaces.Key;
 
 public class PerfTest {
 	
-	private static GDS getGDS() {
+	private static GDSImpl getGDS() {
 		return new GDSImpl(false, "gdstest");
 	}
 	

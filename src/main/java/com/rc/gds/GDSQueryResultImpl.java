@@ -4,16 +4,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
-import com.rc.gds.interfaces.GDS;
 import com.rc.gds.interfaces.GDSCallback;
-import com.rc.gds.interfaces.GDSLoader;
 import com.rc.gds.interfaces.GDSMultiResult;
 import com.rc.gds.interfaces.GDSResultListReceiver;
 import com.rc.gds.interfaces.GDSResultReceiver;
@@ -22,16 +19,16 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 	
 	private static final int MAX_DEPTH = 100;
 
-	GDS gds;
+	GDSImpl gds;
 	Iterator<SearchHit> iterator;
 	Class<T> clazz;
-	GDSLoader loader;
+	GDSLoaderImpl loader;
 	SearchResponse searchResponse;
 	private boolean finished = false;
 	int depth = 0;
 	ExecutorService deepStackExecutor;
 	
-	protected GDSQueryResultImpl(GDS gds, Class<T> clazz, Iterator<SearchHit> iterator, SearchResponse searchResponse) {
+	protected GDSQueryResultImpl(GDSImpl gds, Class<T> clazz, Iterator<SearchHit> iterator, SearchResponse searchResponse) {
 		this.gds = gds;
 		this.iterator = iterator;
 		this.clazz = clazz;
@@ -96,7 +93,7 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 					}
 				}
 			});
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InterruptedException | ExecutionException e) {
+		} catch (Exception e) {
 			throw new RuntimeException("Error completing query on " + clazz, e);
 		}
 	}
