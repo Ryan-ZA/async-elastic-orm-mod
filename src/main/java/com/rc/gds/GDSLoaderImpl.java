@@ -18,6 +18,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 
 import com.rc.gds.interfaces.GDSCallback;
 import com.rc.gds.interfaces.GDSLoader;
@@ -28,7 +29,7 @@ public class GDSLoaderImpl implements GDSLoader {
 
 	GDSImpl gds;
 	private Map<Key, Object> localCache = Collections.synchronizedMap(new HashMap<Key, Object>());
-	private List<Key> alreadyFetching = new ArrayList<>();
+	private List<Key> alreadyFetching = Collections.synchronizedList(new ArrayList<Key>());
 
 	protected GDSLoaderImpl(GDSImpl gds) {
 		this.gds = gds;
@@ -59,7 +60,7 @@ public class GDSLoaderImpl implements GDSLoader {
 						public void onResponse(GetResponse response) {
 							Entity entity = new Entity(kind, response.getId(), response.getSourceAsMap());
 
-							final List<GDSLink> linksToFetch = new ArrayList<GDSLink>();
+							final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
 							try {
 								entityToPOJO(entity, entity.getKey().getId(), linksToFetch, new GDSCallback<Object>() {
 									
@@ -113,7 +114,7 @@ public class GDSLoaderImpl implements GDSLoader {
 					@Override
 					public void onResponse(GetResponse getResponse) {
 						Entity entity = new Entity(key.kind, getResponse.getId(), getResponse.getSourceAsMap());
-						final List<GDSLink> linksToFetch = new ArrayList<GDSLink>();
+						final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
 						try {
 							entityToPOJO(entity, entity.getKey().getId(), linksToFetch, new GDSCallback<Object>() {
 								
@@ -142,7 +143,16 @@ public class GDSLoaderImpl implements GDSLoader {
 					
 					@Override
 					public void onFailure(Throwable e) {
-						callback.onSuccess(null, e);
+						if (e instanceof EsRejectedExecutionException) {
+							try {
+								System.out.println("Retrying...");
+								Thread.sleep(50);
+								gds.getClient().prepareGet(gds.indexFor(key.kind), key.kind, key.id).execute(this);
+							} catch (InterruptedException e1) {
+							}
+						} else {
+							callback.onSuccess(null, e);
+						}
 					}
 				});
 	}
@@ -170,7 +180,7 @@ public class GDSLoaderImpl implements GDSLoader {
 			return;
 		}
 		
-		final List<GDSLink> linksToFetch = new ArrayList<GDSLink>();
+		final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
 		
 		bulkFetchList(stillToFetch, new GDSCallback<Map<Key, Entity>>() {
 			
@@ -243,6 +253,10 @@ public class GDSLoaderImpl implements GDSLoader {
 				for (MultiGetItemResponse itemResponse : response.getResponses()) {
 					Entity entity = new Entity(itemResponse.getType(), itemResponse.getResponse().getId(), itemResponse.getResponse().getSourceAsMap());
 					resultMap.put(new Key(itemResponse.getType(), itemResponse.getId()), entity);
+					if (entity.dbObject == null) {
+						callback.onSuccess(null, new Exception("Item does not exist: " + itemResponse.getType() + " " + itemResponse.getId()));
+						return;
+					}
 				}
 				callback.onSuccess(resultMap, null);
 			}
@@ -342,7 +356,7 @@ public class GDSLoaderImpl implements GDSLoader {
 		final Object pojo = clazz.newInstance();
 		Map<String, GDSField> map = GDSField.createMapFromObject(pojo);
 		
-		final List<GDSCallback<Void>> asyncWorkList = new ArrayList<>();
+		final List<GDSCallback<Void>> asyncWorkList = Collections.synchronizedList(new ArrayList<GDSCallback<Void>>());
 		GDSCallback<Void> block = new GDSCallback<Void>() {
 			
 			@Override
@@ -513,7 +527,7 @@ public class GDSLoaderImpl implements GDSLoader {
 		EmbeddedEntity embeddedEntity = new EmbeddedEntity();
 		embeddedEntity.dbObject = (Map<String, Object>) entity.getProperty(gdsField.fieldName);
 
-		final Collection<Object> keyCheck = new ArrayList<>();
+		final Collection<Object> keyCheck = Collections.synchronizedList(new ArrayList<>());
 		Object block = new Object();
 		keyCheck.add(block);
 		
@@ -571,7 +585,7 @@ public class GDSLoaderImpl implements GDSLoader {
 		
 		Collection<Object> dsCollection = (Collection<Object>) entity.getProperty(gdsField.fieldName);
 
-		final Collection<Object> collectionCopy = new ArrayList<>(dsCollection);
+		final Collection<Object> collectionCopy = Collections.synchronizedList(new ArrayList<>(dsCollection));
 		Object block = new Object();
 		collectionCopy.add(block);
 
@@ -616,7 +630,7 @@ public class GDSLoaderImpl implements GDSLoader {
 			final GDSCallback<Void> callback)
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException, ExecutionException {
 		Collection<EmbeddedEntity> collection = (Collection<EmbeddedEntity>) entity.getProperty(gdsField.fieldName);
-		final Collection<EmbeddedEntity> collectionCopy = new ArrayList<>(collection);
+		final Collection<EmbeddedEntity> collectionCopy = Collections.synchronizedList(new ArrayList<>(collection));
 		EmbeddedEntity block = new EmbeddedEntity();
 		collectionCopy.add(block);
 		int counter = 0;

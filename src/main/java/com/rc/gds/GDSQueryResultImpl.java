@@ -125,7 +125,7 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 			@Override
 			public void onError(Throwable err) {
 				synchronized (result) {
-					errList.add(err);
+					errList.add(new RuntimeException(err));
 					result.notifyAll();
 				}
 			}

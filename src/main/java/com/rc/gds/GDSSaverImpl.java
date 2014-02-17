@@ -15,6 +15,7 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 
 import com.rc.gds.annotation.AlwaysPersist;
 import com.rc.gds.interfaces.GDSCallback;
@@ -42,8 +43,9 @@ public class GDSSaverImpl implements GDSSaver {
 		recursiveUpdate = saver.recursiveUpdate;
 		alreadyStoredObjects = saver.alreadyStoredObjects;
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSSaver#entity(java.lang.Object)
 	 */
 	@Override
@@ -51,8 +53,9 @@ public class GDSSaverImpl implements GDSSaver {
 		this.pojo = pojo;
 		return this;
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSSaver#withSpecialID(java.lang.String)
 	 */
 	@Override
@@ -60,8 +63,9 @@ public class GDSSaverImpl implements GDSSaver {
 		this.specialID = specialID;
 		return this;
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSSaver#forceRecursiveUpdate(boolean)
 	 */
 	@Override
@@ -111,7 +115,7 @@ public class GDSSaverImpl implements GDSSaver {
 		entity.setProperty(GDSClass.GDS_FILTERCLASS_FIELD, classKinds);
 		entity.setUnindexedProperty(GDSClass.GDS_CLASS_FIELD, classKinds.get(0));
 
-		final List<GDSField> gdsFields = new ArrayList<>(fieldMap.values());
+		final List<GDSField> gdsFields = Collections.synchronizedList(new ArrayList<>(fieldMap.values()));
 		GDSField blocker = new GDSField();
 		gdsFields.add(blocker);
 
@@ -210,9 +214,9 @@ public class GDSSaverImpl implements GDSSaver {
 	
 	private void storeCollectionOfPOJO(GDSField field, Object fieldValue, final GDSCallback<Collection<?>> callback) throws IllegalArgumentException, IllegalAccessException,
 			InvocationTargetException {
-		final Collection<Object> pojosOrKeys = new ArrayList<Object>();
+		final Collection<Object> pojosOrKeys = Collections.synchronizedList(new ArrayList<Object>());
 		Collection<?> collection = (Collection<?>) fieldValue;
-		final List<GDSCallback<?>> datastoreSaveCallbacks = new ArrayList<>();
+		final List<GDSCallback<?>> datastoreSaveCallbacks = Collections.synchronizedList(new ArrayList<GDSCallback<?>>());
 		for (Object object : collection) {
 			if (object == null) {
 				continue;
@@ -330,7 +334,7 @@ public class GDSSaverImpl implements GDSSaver {
 				callback.onSuccess(new Key(fieldValueKind, id), null);
 			} else {
 				alreadyStoredObjects.add(fieldValue);
-				GDSSaverImpl saver = new GDSSaverImpl(this);
+				final GDSSaverImpl saver = new GDSSaverImpl(this);
 				saver.fieldMap = map;
 				saver.pojo = fieldValue;
 				if (id == null) {
@@ -342,9 +346,19 @@ public class GDSSaverImpl implements GDSSaver {
 					@Override
 					public void onSuccess(Key key, Throwable err) {
 						try {
+							if (err != null)
+								throw err;
 							String id = (String) GDSField.getValue(idfield, fieldValue);
 							callback.onSuccess(new Key(fieldValueKind, id), err);
+						} catch (EsRejectedExecutionException e) {
+							try {
+								System.out.println("Retrying...");
+								Thread.sleep(50);
+								saver.later(this);
+							} catch (InterruptedException e1) {
+							}
 						} catch (Throwable e) {
+							e.printStackTrace();
 							callback.onSuccess(null, e);
 						}
 					}
@@ -368,7 +382,8 @@ public class GDSSaverImpl implements GDSSaver {
 		}
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSSaver#now()
 	 */
 	@Override
@@ -414,8 +429,9 @@ public class GDSSaverImpl implements GDSSaver {
 			throw new RuntimeException("Error saving object " + pojo, throwable);
 		}
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSSaver#later(com.rc.gds.interfaces.GDSCallback)
 	 */
 	@Override
@@ -453,7 +469,8 @@ public class GDSSaverImpl implements GDSSaver {
 		}
 	}
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSSaver#result()
 	 */
 	@Override

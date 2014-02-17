@@ -24,5 +24,10 @@ public class TestChild {
 	Double dd = 1.0;
 	Byte bb = 2;
 	Long ll = 1L;
+	
+	@Override
+	public String toString() {
+		return name;
+	}
 
 }

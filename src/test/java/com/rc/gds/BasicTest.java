@@ -113,7 +113,7 @@ public class BasicTest {
 		TestParentList testParentList = new TestParentList();
 		testParentList.name = "testParentList" + num;
 		testParentList.testChildList = new ArrayList<>();
-		for (int i = 0; i < 25; i++) {
+		for (int i = 0; i < 2500; i++) {
 			TestChild testChild = new TestChild();
 			testChild.name = "child" + i;
 			testParentList.testChildList.add(testChild);
@@ -122,14 +122,17 @@ public class BasicTest {
 		getGDS().save().entity(testParentList).now();
 		
 		refreshIndex();
+		
+		List<TestChild> queryList = getGDS().query(TestChild.class).asList();
+		Assert.assertEquals(2500, queryList.size());
 
 		TestParentList fetchParent = getGDS().load().fetch(TestParentList.class, testParentList.id).now();
 
-		for (int i = 0; i < 25; i++) {
+		for (int i = 0; i < 2500; i++) {
 			Assert.assertNotNull(fetchParent.testChildList.get(i).name);
 		}
 		
-		Assert.assertEquals(25, fetchParent.testChildList.size());
+		Assert.assertEquals(2500, fetchParent.testChildList.size());
 
 	}
 

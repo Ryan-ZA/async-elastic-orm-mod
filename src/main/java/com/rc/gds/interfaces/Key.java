@@ -92,5 +92,10 @@ public class Key implements Serializable {
 		map.put("kind", kind);
 		return map;
 	}
+	
+	@Override
+	public String toString() {
+		return "Key [kind=" + kind + ", id=" + id + ", version=" + version + "]";
+	}
 
 }
