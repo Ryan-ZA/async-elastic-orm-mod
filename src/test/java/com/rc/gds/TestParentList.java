@@ -11,5 +11,6 @@ public class TestParentList {
 
 	String name;
 	List<TestChild> testChildList;
+	TestChild[] testChildArr;
 
 }

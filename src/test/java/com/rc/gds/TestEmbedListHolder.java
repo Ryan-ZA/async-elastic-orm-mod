@@ -8,5 +8,6 @@ public class TestEmbedListHolder {
 	String id;
 
 	List<TestEmbed> testEmbedList = new ArrayList<TestEmbed>();
+	TestEmbed[] testEmbedArr;
 
 }

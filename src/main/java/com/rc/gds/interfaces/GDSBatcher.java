@@ -1,5 +1,6 @@
 package com.rc.gds.interfaces;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -10,6 +11,11 @@ public class GDSBatcher {
 	final GDSResult<?>[] singleResults;
 	final GDSMultiResult<?>[] multiResults;
 	
+	public GDSBatcher(Collection<GDSResult<?>> input) {
+		singleResults = input.toArray(new GDSResult[0]);
+		multiResults = null;
+	}
+
 	public GDSBatcher(GDSResult<?>... input) {
 		singleResults = input;
 		multiResults = null;
@@ -57,6 +63,9 @@ public class GDSBatcher {
 				result.laterAsList(multiCallback);
 		}
 		
+		if (total.get() == 0)
+			asyncResult.onSuccess(true, null);
+
 		return asyncResult;
 	}
 

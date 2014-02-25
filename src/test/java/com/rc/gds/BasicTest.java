@@ -64,10 +64,12 @@ public class BasicTest {
 	public void testEmbedList() {
 		TestEmbedListHolder embedHolder = new TestEmbedListHolder();
 		
+		embedHolder.testEmbedArr = new TestEmbed[25];
 		for (int i = 0; i < 25; i++) {
 			TestEmbed embed = new TestEmbed();
 			embed.x = i;
 			embedHolder.testEmbedList.add(embed);
+			embedHolder.testEmbedArr[i] = embed;
 		}
 		
 		getGDS().save().entity(embedHolder).now();
@@ -118,6 +120,7 @@ public class BasicTest {
 			testChild.name = "child" + i;
 			testParentList.testChildList.add(testChild);
 		}
+		testParentList.testChildArr = testParentList.testChildList.subList(0, 20).toArray(new TestChild[0]);
 
 		getGDS().save().entity(testParentList).now();
 		
@@ -127,6 +130,8 @@ public class BasicTest {
 		Assert.assertEquals(2500, queryList.size());
 
 		TestParentList fetchParent = getGDS().load().fetch(TestParentList.class, testParentList.id).now();
+		Assert.assertEquals(20, fetchParent.testChildArr.length);
+		Assert.assertEquals(2500, fetchParent.testChildList.size());
 
 		for (int i = 0; i < 2500; i++) {
 			Assert.assertNotNull(fetchParent.testChildList.get(i).name);

@@ -76,7 +76,7 @@ public class GDSSaverImpl implements GDSSaver {
 	
 	private void createEntity(boolean isEmbedded, final GDSCallback<Entity> callback) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		if (fieldMap == null)
-			fieldMap = GDSField.createMapFromObject(pojo);
+			fieldMap = GDSField.createMapFromObject(gds, pojo);
 		
 		GDSClass.onPreSave(gds, pojo);
 
@@ -113,7 +113,7 @@ public class GDSSaverImpl implements GDSSaver {
 		// Add indexed class and superclass information for easy polymorphic
 		// querying
 		entity.setProperty(GDSClass.GDS_FILTERCLASS_FIELD, classKinds);
-		entity.setUnindexedProperty(GDSClass.GDS_CLASS_FIELD, classKinds.get(0));
+		entity.setProperty(GDSClass.GDS_CLASS_FIELD, classKinds.get(0));
 
 		final List<GDSField> gdsFields = Collections.synchronizedList(new ArrayList<>(fieldMap.values()));
 		GDSField blocker = new GDSField();
@@ -144,12 +144,6 @@ public class GDSSaverImpl implements GDSSaver {
 		boolean hasInnerCallback = false;
 
 		if (fieldValue == null) {
-			// Only set nulls for indexed properties as nulls for un-indexed
-			// properties do nothing.
-			// Null must be set for indexed properties to ensure they appear in
-			// the index and can be queried.
-			if (field.indexed)
-				setEntityProperty(entity, field, null);
 			callback.onSuccess(null, null);
 			return;
 		}
@@ -192,7 +186,7 @@ public class GDSSaverImpl implements GDSSaver {
 				
 				@Override
 				public void onSuccess(EmbeddedEntity embeddedEntity, Throwable err) {
-					entity.setUnindexedProperty(field.fieldName, embeddedEntity);
+					entity.setProperty(field.fieldName, embeddedEntity);
 					callback.onSuccess(null, err);
 				}
 			});
@@ -263,7 +257,7 @@ public class GDSSaverImpl implements GDSSaver {
 			Object input = entry.getKey();
 			Class<?> inputClazz = input.getClass();
 			if (GDSField.nonDSClasses.contains(inputClazz)) {
-				mapEntity.setUnindexedProperty("K" + counter, input);
+				mapEntity.setProperty("K" + counter, input);
 			} else if (GDSClass.hasIDField(inputClazz)) {
 				final int fCounter = counter;
 				GDSCallback<Key> inCallback = new GDSCallback<Key>() {
@@ -291,7 +285,7 @@ public class GDSSaverImpl implements GDSSaver {
 			input = entry.getValue();
 			inputClazz = input.getClass();
 			if (GDSField.nonDSClasses.contains(inputClazz)) {
-				mapEntity.setUnindexedProperty("V" + counter, input);
+				mapEntity.setProperty("V" + counter, input);
 			} else if (GDSClass.hasIDField(inputClazz)) {
 				final int fCounter = counter;
 				GDSCallback<Key> inCallback = new GDSCallback<Key>() {
@@ -324,7 +318,7 @@ public class GDSSaverImpl implements GDSSaver {
 
 	private void createKeyForRegularPOJO(final Object fieldValue, final GDSCallback<Key> callback) throws IllegalArgumentException, IllegalAccessException {
 		final String fieldValueKind = GDSClass.getKind(fieldValue);
-		Map<String, GDSField> map = GDSField.createMapFromObject(fieldValue);
+		Map<String, GDSField> map = GDSField.createMapFromObject(gds, fieldValue);
 		final GDSField idfield = map.get(GDSField.GDS_ID_FIELD);
 		Object idFieldValue = GDSField.getValue(idfield, fieldValue);
 		String id = idfield == null ? null : (String) idFieldValue;
@@ -375,11 +369,7 @@ public class GDSSaverImpl implements GDSSaver {
 	}
 
 	private void setEntityProperty(PropertyContainer entity, GDSField field, Object value) {
-		if (field.indexed) {
-			entity.setProperty(field.fieldName, value);
-		} else {
-			entity.setUnindexedProperty(field.fieldName, value);
-		}
+		entity.setProperty(field.fieldName, value);
 	}
 	
 	/*
@@ -543,7 +533,7 @@ public class GDSSaverImpl implements GDSSaver {
 
 	private synchronized void testSuccess(GDSCallback<?> inCallback, GDSCallback<EmbeddedEntity> callback, EmbeddedEntity mapEntity, List<Object> datastoreSaveCallbacks,
 			String key, Map<String, Object> val, Throwable err) {
-		mapEntity.setUnindexedProperty(key, val);
+		mapEntity.setProperty(key, val);
 		datastoreSaveCallbacks.remove(inCallback);
 		if (datastoreSaveCallbacks.isEmpty())
 			callback.onSuccess(mapEntity, err);

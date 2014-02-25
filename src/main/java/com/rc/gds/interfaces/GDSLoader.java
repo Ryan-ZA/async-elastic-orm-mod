@@ -22,7 +22,7 @@ public interface GDSLoader {
 	 * @param key
 	 * @return
 	 */
-	public abstract void fetch(Key key, GDSCallback<Object> callback);
+	public abstract GDSResult<Object> fetch(Key key);
 	
 	/**
 	 * Will fetch all pojos for keys.
@@ -31,6 +31,6 @@ public interface GDSLoader {
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract void fetchBatch(Iterable<Key> keys, GDSCallback<Map<Key, Object>> callback) throws Exception;
+	public abstract GDSResult<Map<Key, Object>> fetchBatch(Iterable<Key> keys) throws Exception;
 
 }

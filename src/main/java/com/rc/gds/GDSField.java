@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.rc.gds.annotation.Analyzed;
 import com.rc.gds.annotation.Embed;
 import com.rc.gds.annotation.ID;
-import com.rc.gds.annotation.Index;
 import com.rc.gds.annotation.Version;
 
 public class GDSField {
@@ -98,7 +98,7 @@ public class GDSField {
 	static GDSField createGDSField(Field field) throws IllegalArgumentException, IllegalAccessException {
 		GDSField gdsField = new GDSField();
 		gdsField.embedded = field.getAnnotation(Embed.class) != null;
-		gdsField.indexed = field.getAnnotation(Index.class) != null;
+		gdsField.isAnalyzed = field.getAnnotation(Analyzed.class) != null;
 
 		gdsField.field = field;
 		gdsField.fieldName = field.getName();
@@ -128,6 +128,18 @@ public class GDSField {
 		} else {
 			gdsField.nonDatastoreObject = true;
 		}
+		
+		if (fieldType == Integer.TYPE || fieldType == Integer.class) {
+			gdsField.es_mapping = "integer";
+		} else if (fieldType == Long.TYPE || fieldType == Long.class) {
+			gdsField.es_mapping = "long";
+		} else if (fieldType == Float.TYPE || fieldType == Float.class) {
+			gdsField.es_mapping = "float";
+		} else if (fieldType == Double.TYPE || fieldType == Double.class) {
+			gdsField.es_mapping = "double";
+		} else if (fieldType == Boolean.TYPE || fieldType == Boolean.class) {
+			gdsField.es_mapping = "boolean";
+		}
 
 		return gdsField;
 	}
@@ -141,8 +153,19 @@ public class GDSField {
 	 * @throws IllegalArgumentException
 	 * @throws IllegalAccessException
 	 */
-	public static Map<String, GDSField> createMapFromObject(Object obj) throws IllegalArgumentException, IllegalAccessException {
-		Class<?> clazz = obj.getClass();
+	public static Map<String, GDSField> createMapFromObject(GDSImpl gds, Object obj) throws IllegalArgumentException, IllegalAccessException {
+		return createMapFromClass(gds, obj.getClass());
+	}
+	
+	/**
+	 * Creates a map of fieldnames to GDSFields. Used to store/load entities from the datastore.
+	 * 
+	 * @param clazz
+	 * @return
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
+	public static Map<String, GDSField> createMapFromClass(GDSImpl gds, Class<?> clazz) throws IllegalArgumentException, IllegalAccessException {
 		if (reflectionCache.containsKey(clazz)) {
 			return reflectionCache.get(clazz);
 		}
@@ -184,12 +207,14 @@ public class GDSField {
 		}
 
 		reflectionCache.put(originalClazz, map);
+		
+		ESMapCreator.ensureIndexCreated(gds, originalClazz);
 
 		return map;
 	}
 
 	public static String getID(Object pojo) throws IllegalArgumentException, IllegalAccessException {
-		Map<String, GDSField> map = createMapFromObject(pojo);
+		Map<String, GDSField> map = createMapFromObject(null, pojo);
 		GDSField idfield = map.get(GDS_ID_FIELD);
 
 		if (idfield == null)
@@ -215,8 +240,9 @@ public class GDSField {
 	String fieldName;
 	boolean nonDatastoreObject;
 	boolean embedded;
-	boolean indexed;
 	boolean isArray;
 	boolean isEnum;
+	boolean isAnalyzed;
+	String es_mapping;
 
 }

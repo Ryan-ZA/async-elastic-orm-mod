@@ -6,8 +6,6 @@ public interface PropertyContainer {
 
 	public void setProperty(String key, Object val);
 
-	public void setUnindexedProperty(String key, Object val);
-	
 	public Map<String, Object> getDBDbObject();
 
 	public Object getProperty(String key);

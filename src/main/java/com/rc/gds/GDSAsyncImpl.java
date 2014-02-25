@@ -15,6 +15,14 @@ public class GDSAsyncImpl<T> implements GDSCallback<T>, GDSResult<T> {
 	public GDSAsyncImpl() {
 	}
 	
+	public GDSAsyncImpl(T result) {
+		this.result = result;
+	}
+	
+	public GDSAsyncImpl(Throwable resultErr) {
+		this.resultErr = resultErr;
+	}
+
 	@Override
 	public synchronized void later(GDSCallback<T> inCallback) {
 		callbacks.add(inCallback);
@@ -54,7 +62,7 @@ public class GDSAsyncImpl<T> implements GDSCallback<T>, GDSResult<T> {
 	}
 	
 	@Override
-	public void onSuccess(T t, Throwable err) {
+	public synchronized void onSuccess(T t, Throwable err) {
 		result = t;
 		resultErr = err;
 		for (int i = 0; i < callbacks.size(); i++) {

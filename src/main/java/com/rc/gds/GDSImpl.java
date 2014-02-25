@@ -27,7 +27,6 @@ import com.rc.gds.interfaces.Key;
 public class GDSImpl implements GDS {
 	
 	private Client client;
-	private ESMapCreator mapCreator = new ESMapCreator(this);
 	
 	//private String cluster;
 
@@ -46,7 +45,6 @@ public class GDSImpl implements GDS {
 	@Override
 	public String indexFor(String kind) {
 		String index = kind.toLowerCase(Locale.US);
-		mapCreator.ensureIndexCreated(index);
 		return index;
 	}
 	
@@ -148,9 +146,7 @@ public class GDSImpl implements GDS {
 
 	@Override
 	public GDSResult<Object> load(String kind, String id) {
-		GDSAsyncImpl<Object> async = new GDSAsyncImpl<>();
-		load().fetch(new Key(kind, id), async);
-		return async;
+		return load().fetch(new Key(kind, id));
 	}
 	
 	@Override
@@ -180,7 +176,7 @@ public class GDSImpl implements GDS {
 		}
 		
 		try {
-			load().fetchBatch(keys, new GDSCallback<Map<Key, Object>>() {
+			load().fetchBatch(keys).later(new GDSCallback<Map<Key, Object>>() {
 				
 				@SuppressWarnings("unchecked")
 				@Override

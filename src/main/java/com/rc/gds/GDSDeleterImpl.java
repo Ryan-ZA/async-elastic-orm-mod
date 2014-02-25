@@ -126,4 +126,24 @@ public class GDSDeleterImpl implements GDSDeleter {
 		return callback;
 	}
 
+	@Override
+	public GDSResult<Boolean> deleteAll(Class<?> clazz) {
+		final GDSAsyncImpl<Boolean> callback = new GDSAsyncImpl<>();
+		String kind = GDSClass.getKind(clazz);
+		gds.getClient().prepareDeleteByQuery(gds.indexFor(kind)).setQuery(QueryBuilders.matchAllQuery())
+				.execute(new ActionListener<DeleteByQueryResponse>() {
+					
+					@Override
+					public void onResponse(DeleteByQueryResponse response) {
+						callback.onSuccess(true, null);
+					}
+					
+					@Override
+					public void onFailure(Throwable e) {
+						callback.onSuccess(false, e);
+					}
+				});
+		return callback;
+	}
+
 }

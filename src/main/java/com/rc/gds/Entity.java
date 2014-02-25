@@ -44,11 +44,6 @@ class Entity implements PropertyContainer, Serializable {
 		}
 	}
 
-	@Override
-	public void setUnindexedProperty(String key, Object val) {
-		setProperty(key, val);
-	}
-
 	public String getKind() {
 		return classKind;
 	}
