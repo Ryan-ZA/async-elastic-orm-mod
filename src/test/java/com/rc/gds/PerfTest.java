@@ -84,7 +84,7 @@ public class PerfTest {
 		for (int i = 0; i < 10000; i++) {
 			TestParent testParent = new TestParent();
 			testParent.name = "parent1";
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 			
 			Assert.assertNotNull(testParent.id);
 			if (i % 1000 == 0)
@@ -104,7 +104,7 @@ public class PerfTest {
 			for (int i = 0; i < 100; i++) {
 				TestParent testParent = new TestParent();
 				testParent.name = "parent1";
-				results.add(getGDS().save().entity(testParent).result());
+				results.add(getGDS().save().result(testParent));
 			}
 			
 			boolean success = new GDSBatcher(results.toArray(new GDSResult[0])).onAllComplete().now();
@@ -144,7 +144,7 @@ public class PerfTest {
 		for (int i = 0; i < 10000; i++) {
 			TestParent testParent = new TestParent();
 			testParent.name = "parent1";
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 		}
 		
 		refreshIndex();

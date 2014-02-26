@@ -37,8 +37,8 @@ class Entity implements PropertyContainer, Serializable {
 	public void setProperty(String key, Object val) {
 		if (val instanceof Key) {
 			dbObject.put(key, ((Key) val).toMap());
-		} else if (val instanceof EmbeddedEntity) {
-			dbObject.put(key, ((EmbeddedEntity) val).getDBDbObject());
+		} else if (val instanceof Entity) {
+			dbObject.put(key, ((Entity) val).getDBDbObject());
 		} else {
 			dbObject.put(key, val);
 		}

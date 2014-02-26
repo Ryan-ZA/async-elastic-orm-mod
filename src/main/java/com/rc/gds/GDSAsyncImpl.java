@@ -24,10 +24,11 @@ public class GDSAsyncImpl<T> implements GDSCallback<T>, GDSResult<T> {
 	}
 
 	@Override
-	public synchronized void later(GDSCallback<T> inCallback) {
+	public synchronized GDSResult<T> later(GDSCallback<T> inCallback) {
 		callbacks.add(inCallback);
 		if (result != null || resultErr != null)
 			inCallback.onSuccess(result, resultErr);
+		return this;
 	}
 	
 	@Override

@@ -50,7 +50,7 @@ public class BasicTest {
 		embedHolder.testEmbed1.insideEmbed = new TestEmbed();
 		embedHolder.testEmbed1.insideEmbed.zz = 109L;
 		
-		getGDS().save().entity(embedHolder).now();
+		getGDS().save().result(embedHolder).now();
 		
 		refreshIndex();
 		TestEmbedHolder loaded = getGDS().query(TestEmbedHolder.class).asList().get(0);
@@ -72,7 +72,7 @@ public class BasicTest {
 			embedHolder.testEmbedArr[i] = embed;
 		}
 		
-		getGDS().save().entity(embedHolder).now();
+		getGDS().save().result(embedHolder).now();
 		
 		refreshIndex();
 		TestEmbedListHolder loaded = getGDS().query(TestEmbedListHolder.class).asList().get(0);
@@ -94,7 +94,7 @@ public class BasicTest {
 			embedHolder.testEmbedMap.put("key" + i, embed);
 		}
 		
-		getGDS().save().entity(embedHolder).now();
+		getGDS().save().result(embedHolder).now();
 		
 		refreshIndex();
 		TestEmbedMapHolder loaded = getGDS().query(TestEmbedMapHolder.class).asList().get(0);
@@ -122,7 +122,8 @@ public class BasicTest {
 		}
 		testParentList.testChildArr = testParentList.testChildList.subList(0, 20).toArray(new TestChild[0]);
 
-		getGDS().save().entity(testParentList).now();
+		getGDS().save().result(testParentList).now();
+		System.out.println("DDD");
 		
 		refreshIndex();
 		
@@ -156,7 +157,8 @@ public class BasicTest {
 			testParentMap.testChildMap.put("key" + i, testChild);
 		}
 		
-		getGDS().save().entity(testParentMap).now();
+		getGDS().save().result(testParentMap).now();
+		System.out.println("DD");
 		
 		TestParentMap fetchParent = getGDS().load().fetch(TestParentMap.class, testParentMap.id).now();
 		Assert.assertEquals(25, fetchParent.testChildMap.size());
@@ -174,7 +176,7 @@ public class BasicTest {
 		map.testMap.put("Test1", 332.131);
 		map.testMap.put("t2", -8.0);
 
-		getGDS().save().entity(map).now();
+		getGDS().save().result(map).now();
 
 		TestBasicMap map2 = getGDS().load().fetch(TestBasicMap.class, map.id).now();
 
@@ -197,7 +199,7 @@ public class BasicTest {
 		TestChildPoly childPoly = new TestChildPoly();
 		parentPoly.testChild = childPoly;
 		
-		getGDS().save().entity(parentPoly).now();
+		getGDS().save().result(parentPoly).now();
 		
 		refreshIndex();
 		TestParentPoly loadPoly = (TestParentPoly) getGDS().query(TestParent.class).asList().get(0);
@@ -225,7 +227,7 @@ public class BasicTest {
 		testChild.name = "child" + num;
 		testParent.testChild = testChild;
 		
-		getGDS().save().entity(testParent).now();
+		getGDS().save().result(testParent).now();
 		
 		refreshIndex();
 
@@ -248,7 +250,7 @@ public class BasicTest {
 			testChild.name = "child" + i;
 			testParent.testChild = testChild;
 			
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 		}
 		
 		refreshIndex();
@@ -267,7 +269,7 @@ public class BasicTest {
 		testChild.name = "child1";
 		testParent.testChild = testChild;
 
-		getGDS().save().entity(testParent).now();
+		getGDS().save().result(testParent).now();
 
 		Assert.assertNotNull(testParent.id);
 		Assert.assertNotNull(testChild.id);
@@ -284,7 +286,7 @@ public class BasicTest {
 		test.theSubClass = new TheSubClass();
 		test.theSubClass.i = 867;
 
-		getGDS().save().entity(test).now();
+		getGDS().save().result(test).now();
 
 		TestSubClass load = getGDS().load().fetch(TestSubClass.class, test.id).now();
 
@@ -302,7 +304,7 @@ public class BasicTest {
 		testChild.name = "child1";
 		testParent.testChild = testChild;
 		
-		getGDS().save().entity(testParent).now();
+		getGDS().save().result(testParent).now();
 		
 		Assert.assertNotNull(testParent.id);
 		Assert.assertNotNull(testChild.id);
@@ -312,7 +314,7 @@ public class BasicTest {
 			Assert.assertEquals(testParent.name, fetchParent.name);
 			Assert.assertEquals(testParent.testChild.name, fetchParent.testChild.name);
 			
-			getGDS().save().entity(fetchParent).now();
+			getGDS().save().result(fetchParent).now();
 		}
 	}
 
@@ -325,11 +327,11 @@ public class BasicTest {
 		testChild.name = "child1";
 		testParent.testChild = testChild;
 
-		getGDS().save().entity(testParent).now();
+		getGDS().save().result(testParent).now();
 
 		testChild.name = "child2";
 
-		getGDS().save().entity(testParent).now();
+		getGDS().save().result(testParent).now();
 
 		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
 		Assert.assertEquals(testParent.testChild.name, fetchParent.testChild.name);
@@ -354,7 +356,7 @@ public class BasicTest {
 		testParent.name = "parent1";
 		testParent.testChild = tc1;
 
-		getGDS().save().entity(testParent).now();
+		getGDS().save().result(testParent).now();
 
 		Assert.assertNotNull(testParent.id);
 		Assert.assertNotNull(tc1.id);
@@ -385,7 +387,7 @@ public class BasicTest {
 		child1.deepChild = child2;
 		child2.deepChild = child1;
 		
-		getGDS().save().entity(child1).now();
+		getGDS().save().result(child1).now();
 		
 		Assert.assertNotNull(child1.id);
 		Assert.assertNotNull(child2.id);
@@ -417,7 +419,7 @@ public class BasicTest {
 			testParentList.testChildList.add(testChild);
 		}
 		
-		getGDS().save().entity(testParentList).now();
+		getGDS().save().result(testParentList).now();
 		
 		refreshIndex();
 		
@@ -446,7 +448,7 @@ public class BasicTest {
 			testParentMap.testChildMap.put("key3 " + i, testChild);
 		}
 		
-		getGDS().save().entity(testParentMap).now();
+		getGDS().save().result(testParentMap).now();
 		
 		Assert.assertNotNull(testParentMap.id);
 		for (TestChild testChild : testParentMap.testChildMap.values())
@@ -466,15 +468,15 @@ public class BasicTest {
 	public void testBatcher() {
 		
 		TestParent testParent1 = new TestParent();
-		GDSResult<Key> result1 = getGDS().save().entity(testParent1).result();
+		GDSResult<Key> result1 = getGDS().save().result(testParent1);
 		TestParent testParent2 = new TestParent();
-		GDSResult<Key> result2 = getGDS().save().entity(testParent2).result();
+		GDSResult<Key> result2 = getGDS().save().result(testParent2);
 		TestParent testParent3 = new TestParent();
-		GDSResult<Key> result3 = getGDS().save().entity(testParent3).result();
+		GDSResult<Key> result3 = getGDS().save().result(testParent3);
 		TestParent testParent4 = new TestParent();
-		GDSResult<Key> result4 = getGDS().save().entity(testParent4).result();
+		GDSResult<Key> result4 = getGDS().save().result(testParent4);
 		TestParent testParent5 = new TestParent();
-		GDSResult<Key> result5 = getGDS().save().entity(testParent5).result();
+		GDSResult<Key> result5 = getGDS().save().result(testParent5);
 		
 		GDSResult<Boolean> allResult = new GDSBatcher(result1, result2, result3, result4, result5).onAllComplete();
 		boolean success = allResult.now();

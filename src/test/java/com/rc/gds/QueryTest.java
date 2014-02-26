@@ -45,7 +45,7 @@ public class QueryTest {
 			testChild.name = "child" + i;
 			testParent.testChild = testChild;
 			
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 			
 			total += i;
 		}
@@ -77,7 +77,7 @@ public class QueryTest {
 			testParent.name = "parent" + i;
 			testParent.testChild = testChild;
 			
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 			
 			total1 += i;
 			total2 += 5;
@@ -120,7 +120,7 @@ public class QueryTest {
 			else
 				testParent.testChild = testChildPoly;
 			
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 			
 			total1 += i;
 			total2 += Integer.parseInt(testParent.testChild.name.substring(5));
@@ -164,7 +164,7 @@ public class QueryTest {
 			testParent.name = "parent" + i;
 			testParent.testChild = tc1;
 			
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 		}
 		
 		refreshIndex();
@@ -214,7 +214,7 @@ public class QueryTest {
 			else
 				testParent.testChild = tc4;
 			
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 		}
 		
 		refreshIndex();
@@ -237,19 +237,19 @@ public class QueryTest {
 	public void testQueryFromMultiple() {
 		TestBasicMap basicMap = new TestBasicMap();
 		basicMap.name = "map";
-		getGDS().save().entity(basicMap).now();
+		getGDS().save().result(basicMap).now();
 		
 		TestChild testChild = new TestChild();
 		testChild.name = "child";
-		getGDS().save().entity(testChild).now();
+		getGDS().save().result(testChild).now();
 		
 		TestChildPoly testChildPoly = new TestChildPoly();
 		testChildPoly.name = "childpoly";
-		getGDS().save().entity(testChildPoly).now();
+		getGDS().save().result(testChildPoly).now();
 		
 		TestChildChild testChildChild = new TestChildChild();
 		testChildChild.name = "childchild";
-		getGDS().save().entity(testChildChild).now();
+		getGDS().save().result(testChildChild).now();
 		
 		refreshIndex();
 		
@@ -263,13 +263,13 @@ public class QueryTest {
 	public void testBasicFilter() {
 		TestParent testParent = new TestParent();
 		testParent.name = "bla";
-		getGDS().save().entity(testParent).now();
+		getGDS().save().result(testParent).now();
 		
 		TestParentPoly testParentPoly = new TestParentPoly();
 		testParentPoly.name = "blu";
 		testParentPoly.testChild = new TestChild();
 		testParentPoly.testChild.name = "chi";
-		getGDS().save().entity(testParentPoly).now();
+		getGDS().save().result(testParentPoly).now();
 		
 		refreshIndex();
 		
@@ -302,7 +302,7 @@ public class QueryTest {
 			TestParentPoly testParentPoly = new TestParentPoly();
 			testParentPoly.name = "test" + i;
 			testParentPoly.param1 = i;
-			getGDS().save().entity(testParentPoly).now();
+			getGDS().save().result(testParentPoly).now();
 		}
 		
 		refreshIndex();
@@ -329,7 +329,7 @@ public class QueryTest {
 			TestParentPoly testParentPoly = new TestParentPoly();
 			testParentPoly.name = "test" + i + ",twest" + -i;
 			testParentPoly.param1 = i;
-			getGDS().save().entity(testParentPoly).now();
+			getGDS().save().result(testParentPoly).now();
 		}
 		
 		refreshIndex();
@@ -353,19 +353,19 @@ public class QueryTest {
 		
 		child = new TestChildPoly();
 		child.bytes = Arrays.asList(1, 2, 3, 4);
-		getGDS().save().entity(child).now();
+		getGDS().save().result(child).now();
 		
 		child = new TestChildPoly();
 		child.bytes = Arrays.asList(2, 3, 4, 5);
-		getGDS().save().entity(child).now();
+		getGDS().save().result(child).now();
 		
 		child = new TestChildPoly();
 		child.bytes = Arrays.asList(3, 4, 5, 6);
-		getGDS().save().entity(child).now();
+		getGDS().save().result(child).now();
 		
 		child = new TestChildPoly();
 		child.bytes = Arrays.asList(4, 5, 6, 7);
-		getGDS().save().entity(child).now();
+		getGDS().save().result(child).now();
 		
 		refreshIndex();
 		
@@ -394,7 +394,7 @@ public class QueryTest {
 			testEmbedHolder.testEmbed1 = new TestEmbed();
 			testEmbedHolder.testEmbed1.x = i;
 			testEmbedHolder.testEmbed1.z = 10;
-			getGDS().save().entity(testEmbedHolder).now();
+			getGDS().save().result(testEmbedHolder).now();
 		}
 		
 		refreshIndex();
@@ -418,7 +418,7 @@ public class QueryTest {
 		for (int i = 0; i < 50; i++) {
 			TestParent testParent = new TestParent();
 			testParent.name = "bla" + i / 10;
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 		}
 		
 		refreshIndex();
@@ -442,7 +442,7 @@ public class QueryTest {
 		for (int i = 0; i < 50; i++) {
 			TestParent testParent = new TestParent();
 			testParent.testChild = testChild;
-			getGDS().save().entity(testParent).now();
+			getGDS().save().result(testParent).now();
 		}
 		
 		refreshIndex();

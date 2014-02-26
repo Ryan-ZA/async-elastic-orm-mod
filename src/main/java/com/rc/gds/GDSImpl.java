@@ -152,7 +152,7 @@ public class GDSImpl implements GDS {
 	@Override
 	public <T> GDSResult<Key> save(T t) {
 		GDSSaver gdsSaver = new GDSSaverImpl(this);
-		return gdsSaver.entity(t).result();
+		return gdsSaver.result(t);
 	}
 
 	@Override

@@ -3,10 +3,6 @@ package com.rc.gds.interfaces;
 
 public interface GDSSaver {
 	
-	public abstract GDSSaver entity(Object pojo);
-	
-	public abstract GDSSaver withSpecialID(String specialID);
-	
 	/**
 	 * This function will force the re-saving of any pojo that already have an ID set. Normal behaviour is for all new pojos (pojos with a
 	 * blank ID) to be saved recursively, and all pojos that have an ID to be skipped as they are already saved. Not really recommended to
@@ -18,11 +14,7 @@ public interface GDSSaver {
 	 * @return
 	 */
 	public abstract GDSSaver forceRecursiveUpdate(boolean recursiveUpdate);
-	
-	public abstract Key now();
-	
-	public abstract void later(GDSCallback<Key> callback);
-	
-	public abstract GDSResult<Key> result();
+
+	public abstract GDSResult<Key> result(Object pojo);
 	
 }

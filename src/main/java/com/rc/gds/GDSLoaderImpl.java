@@ -541,7 +541,6 @@ public class GDSLoaderImpl implements GDSLoader {
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException, ExecutionException {
 		
 		Collection<Object> dsCollection = (Collection<Object>) entity.getProperty(gdsField.fieldName);
-		System.out.println("dsCollection: " + dsCollection.size());
 		final List<GDSResult<?>> results = new ArrayList<>();
 
 		for (final Object obj : dsCollection) {
@@ -553,7 +552,6 @@ public class GDSLoaderImpl implements GDSLoader {
 			}
 		}
 		
-		System.out.println("fillCollectionAsync: " + results.size());
 		GDSResult<Boolean> onComplete = new GDSBatcher(results).onAllComplete();
 		onComplete.later(new GDSCallback<Boolean>() {
 			
@@ -656,6 +654,14 @@ public class GDSLoaderImpl implements GDSLoader {
 				fieldPOJO = new Character(s.charAt(0));
 				Array.set(array, index, fieldPOJO);
 			} else {
+				System.out.println("array: " + array);
+				System.out.println("type: " + type);
+				System.out.println("fieldPOJO: " + fieldPOJO);
+				if (fieldPOJO instanceof Object[]) {
+					System.out.println("fieldPOJOc: " + fieldPOJO.getClass());
+					Object[] a = (Object[]) fieldPOJO;
+					System.out.println("fieldPOJOin: " + a[0] + " ::: " + a[0].getClass());
+				}
 				Array.set(array, index, fieldPOJO);
 			}
 		}
