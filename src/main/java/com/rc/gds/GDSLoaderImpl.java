@@ -654,14 +654,6 @@ public class GDSLoaderImpl implements GDSLoader {
 				fieldPOJO = new Character(s.charAt(0));
 				Array.set(array, index, fieldPOJO);
 			} else {
-				System.out.println("array: " + array);
-				System.out.println("type: " + type);
-				System.out.println("fieldPOJO: " + fieldPOJO);
-				if (fieldPOJO instanceof Object[]) {
-					System.out.println("fieldPOJOc: " + fieldPOJO.getClass());
-					Object[] a = (Object[]) fieldPOJO;
-					System.out.println("fieldPOJOin: " + a[0] + " ::: " + a[0].getClass());
-				}
 				Array.set(array, index, fieldPOJO);
 			}
 		}

@@ -74,13 +74,13 @@ public class GDSSaverImpl implements GDSSaver {
 		
 		// If the object is versioned we set it here
 		GDSField verfield = fieldMap.get(GDSField.GDS_VERSION_FIELD);
-		if (verfield != null) {
+		if (!isEmbedded && verfield != null)
 			entity.setVersion(verfield.field.getLong(pojo));
-		}
 		
 		// Add indexed class and superclass information for easy polymorphic
 		// querying
-		entity.setProperty(GDSClass.GDS_FILTERCLASS_FIELD, classKinds);
+		if (!isEmbedded)
+			entity.setProperty(GDSClass.GDS_FILTERCLASS_FIELD, classKinds);
 		entity.setProperty(GDSClass.GDS_CLASS_FIELD, classKinds.get(0));
 		
 		final Map<GDSField, GDSResult<?>> fieldResults = new HashMap<>();
@@ -162,7 +162,7 @@ public class GDSSaverImpl implements GDSSaver {
 			} else if (GDSClass.hasIDField(object.getClass())) {
 				resultList.add(createKeyForRegularPOJO(object));
 			} else {
-				resultList.add(createEntity(fieldValue, true));
+				resultList.add(createEntity(object, true));
 			}
 		}
 		
@@ -289,7 +289,7 @@ public class GDSSaverImpl implements GDSSaver {
 	 */
 	@Override
 	public GDSResult<Key> result(final Object pojo) {
-		return result(pojo, false);
+		return result(pojo, true);
 	}
 	
 	private GDSResult<Key> result(final Object pojo, final boolean isUpdate) {

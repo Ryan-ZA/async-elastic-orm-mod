@@ -208,7 +208,9 @@ public class GDSField {
 
 		reflectionCache.put(originalClazz, map);
 		
-		ESMapCreator.ensureIndexCreated(gds, originalClazz);
+		GDSField idfield = map.get(GDS_ID_FIELD);
+		if (idfield != null)
+			ESMapCreator.ensureIndexCreated(gds, originalClazz);
 
 		return map;
 	}
