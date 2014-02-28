@@ -1,5 +1,8 @@
 package com.rc.gds;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -9,7 +12,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -55,13 +57,13 @@ public class QueryTest {
 		List<TestParent> result = getGDS().query(TestParent.class).asList();
 		int newtotal = 0;
 		for (TestParent tp : result) {
-			Assert.assertEquals("parent", tp.name.substring(0, 6));
-			Assert.assertEquals("child", tp.testChild.name.substring(0, 5));
+			assertEquals("parent", tp.name.substring(0, 6));
+			assertEquals("child", tp.testChild.name.substring(0, 5));
 			
 			newtotal += Integer.parseInt(tp.name.substring(6));
 		}
 		
-		Assert.assertEquals(total, newtotal);
+		assertEquals(total, newtotal);
 	}
 	
 	@Test
@@ -90,15 +92,15 @@ public class QueryTest {
 		int newtotal2 = 0;
 		
 		for (TestParent tp : result) {
-			Assert.assertEquals("parent", tp.name.substring(0, 6));
-			Assert.assertEquals("child", tp.testChild.name.substring(0, 5));
+			assertEquals("parent", tp.name.substring(0, 6));
+			assertEquals("child", tp.testChild.name.substring(0, 5));
 			
 			newtotal1 += Integer.parseInt(tp.name.substring(6));
 			newtotal2 += Integer.parseInt(tp.testChild.name.substring(5));
 		}
 		
-		Assert.assertEquals(total1, newtotal1);
-		Assert.assertEquals(total2, newtotal2);
+		assertEquals(total1, newtotal1);
+		assertEquals(total2, newtotal2);
 	}
 	
 	@Test
@@ -133,15 +135,15 @@ public class QueryTest {
 		int newtotal2 = 0;
 		
 		for (TestParent tp : result) {
-			Assert.assertEquals("parent", tp.name.substring(0, 6));
-			Assert.assertEquals("child", tp.testChild.name.substring(0, 5));
+			assertEquals("parent", tp.name.substring(0, 6));
+			assertEquals("child", tp.testChild.name.substring(0, 5));
 			
 			newtotal1 += Integer.parseInt(tp.name.substring(6));
 			newtotal2 += Integer.parseInt(tp.testChild.name.substring(5));
 		}
 		
-		Assert.assertEquals(total1, newtotal1);
-		Assert.assertEquals(total2, newtotal2);
+		assertEquals(total1, newtotal1);
+		assertEquals(total2, newtotal2);
 	}
 	
 	@Test
@@ -178,10 +180,10 @@ public class QueryTest {
 			TestChildChild f3 = f2.deepChild;
 			TestChildChild f4 = f3.deepChild;
 			
-			Assert.assertEquals(tc1.name, f1.name);
-			Assert.assertEquals(tc2.name, f2.name);
-			Assert.assertEquals(tc3.name, f3.name);
-			Assert.assertEquals(tc4.name, f4.name);
+			assertEquals(tc1.name, f1.name);
+			assertEquals(tc2.name, f2.name);
+			assertEquals(tc3.name, f3.name);
+			assertEquals(tc4.name, f4.name);
 		}
 	}
 	
@@ -227,9 +229,9 @@ public class QueryTest {
 			TestChildChild f2 = f1.deepChild;
 			TestChildChild f3 = f2.deepChild;
 			
-			Assert.assertNotNull(f1.name);
-			Assert.assertNotNull(f2.name);
-			Assert.assertNotNull(f3.name);
+			assertNotNull(f1.name);
+			assertNotNull(f2.name);
+			assertNotNull(f3.name);
 		}
 	}
 	
@@ -253,10 +255,10 @@ public class QueryTest {
 		
 		refreshIndex();
 		
-		Assert.assertEquals(1, getGDS().query(TestBasicMap.class).asList().size());
-		Assert.assertEquals(3, getGDS().query(TestChild.class).asList().size());
-		Assert.assertEquals(1, getGDS().query(TestChildPoly.class).asList().size());
-		Assert.assertEquals(1, getGDS().query(TestChildChild.class).asList().size());
+		assertEquals(1, getGDS().query(TestBasicMap.class).asList().size());
+		assertEquals(3, getGDS().query(TestChild.class).asList().size());
+		assertEquals(1, getGDS().query(TestChildPoly.class).asList().size());
+		assertEquals(1, getGDS().query(TestChildChild.class).asList().size());
 	}
 	
 	@Test
@@ -273,24 +275,24 @@ public class QueryTest {
 		
 		refreshIndex();
 		
-		Assert.assertEquals(2, getGDS().query(TestParent.class).asList().size());
-		Assert.assertEquals(1, getGDS().query(TestParent.class)
+		assertEquals(2, getGDS().query(TestParent.class).asList().size());
+		assertEquals(1, getGDS().query(TestParent.class)
 				.filter("testChild", testParentPoly.testChild)
 				.asList().size());
-		Assert.assertEquals(1, getGDS().query(TestParent.class)
+		assertEquals(1, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.matchPhraseQuery("name", "bla"))
 				.asList().size());
-		Assert.assertEquals(1, getGDS().query(TestParent.class)
+		assertEquals(1, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.matchPhraseQuery("name", "blu"))
 				.asList().size());
-		Assert.assertEquals(0, getGDS().query(TestParent.class)
+		assertEquals(0, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.matchPhraseQuery("name", "na"))
 				.asList().size());
-		Assert.assertEquals(0, getGDS().query(TestParent.class)
+		assertEquals(0, getGDS().query(TestParent.class)
 				.filter("testChild", testParentPoly.testChild)
 				.filter(QueryBuilders.matchPhraseQuery("name", "bla"))
 				.asList().size());
-		Assert.assertEquals(1, getGDS().query(TestParent.class)
+		assertEquals(1, getGDS().query(TestParent.class)
 				.filter("testChild", testParentPoly.testChild)
 				.filter(QueryBuilders.matchPhraseQuery("name", "blu"))
 				.asList().size());
@@ -307,17 +309,17 @@ public class QueryTest {
 		
 		refreshIndex();
 		
-		Assert.assertEquals(15, getGDS().query(TestParentPoly.class).asList().size());
-		Assert.assertEquals(1, getGDS().query(TestParent.class)
+		assertEquals(15, getGDS().query(TestParentPoly.class).asList().size());
+		assertEquals(1, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.matchPhraseQuery("param1", 2))
 				.asList().size());
-		Assert.assertEquals(1, getGDS().query(TestParent.class)
+		assertEquals(1, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.matchPhraseQuery("param1", -2))
 				.asList().size());
-		Assert.assertEquals(3, getGDS().query(TestParent.class)
+		assertEquals(3, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.rangeQuery("param1").gt(3).lte(6))
 				.asList().size());
-		Assert.assertEquals(3, getGDS().query(TestParent.class)
+		assertEquals(3, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.rangeQuery("param1").gt(-5).lte(-2))
 				.asList().size());
 		
@@ -334,14 +336,14 @@ public class QueryTest {
 		
 		refreshIndex();
 		
-		Assert.assertEquals(15, getGDS().query(TestParentPoly.class).asList().size());
-		Assert.assertEquals(1, getGDS().query(TestParent.class)
+		assertEquals(15, getGDS().query(TestParentPoly.class).asList().size());
+		assertEquals(1, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.matchPhraseQuery("name", "test-2,twest2"))
 				.asList().size());
-		Assert.assertEquals(0, getGDS().query(TestParent.class)
+		assertEquals(0, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.matchPhraseQuery("name", "est2,twest-2"))
 				.asList().size());
-		Assert.assertEquals(1, getGDS().query(TestParent.class)
+		assertEquals(1, getGDS().query(TestParent.class)
 				.filter(QueryBuilders.matchPhraseQuery("name", "test2,twest-2"))
 				.asList().size());
 		
@@ -370,19 +372,19 @@ public class QueryTest {
 		refreshIndex();
 		
 		int[] test = new int[] { 1 };
-		Assert.assertEquals(1, getGDS().query(TestChildPoly.class)
+		assertEquals(1, getGDS().query(TestChildPoly.class)
 				.filter(QueryBuilders.inQuery("bytes", test))
 				.asList().size());
 		test = new int[] { 1, 2 };
-		Assert.assertEquals(2, getGDS().query(TestChildPoly.class)
+		assertEquals(2, getGDS().query(TestChildPoly.class)
 				.filter(QueryBuilders.inQuery("bytes", test))
 				.asList().size());
 		test = new int[] { 1, 2, 3, 4 };
-		Assert.assertEquals(4, getGDS().query(TestChildPoly.class)
+		assertEquals(4, getGDS().query(TestChildPoly.class)
 				.filter(QueryBuilders.inQuery("bytes", test))
 				.asList().size());
 		test = new int[] { 11, 22, 33, 44 };
-		Assert.assertEquals(0, getGDS().query(TestChildPoly.class)
+		assertEquals(0, getGDS().query(TestChildPoly.class)
 				.filter(QueryBuilders.inQuery("bytes", test))
 				.asList().size());
 	}
@@ -399,15 +401,15 @@ public class QueryTest {
 		
 		refreshIndex();
 		
-		Assert.assertEquals(10, getGDS().query(TestEmbedHolder.class).asList().size());
+		assertEquals(10, getGDS().query(TestEmbedHolder.class).asList().size());
 		
 		String script = "_source.testEmbed1.x > 5";
-		Assert.assertEquals(4, getGDS().query(TestEmbedHolder.class)
+		assertEquals(4, getGDS().query(TestEmbedHolder.class)
 				.filter(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.scriptFilter(script)))
 				.asList().size());
 		
 		script = "_source.testEmbed1.x * _source.testEmbed1.z < 25";
-		Assert.assertEquals(3, getGDS().query(TestEmbedHolder.class)
+		assertEquals(3, getGDS().query(TestEmbedHolder.class)
 				.filter(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.scriptFilter(script)))
 				.asList().size());
 		
@@ -430,9 +432,9 @@ public class QueryTest {
 				.get();
 		
 		TermsFacet termsFacet = sr.getFacets().facet(TermsFacet.class, "test1");
-		Assert.assertEquals(5, termsFacet.getEntries().size());
+		assertEquals(5, termsFacet.getEntries().size());
 		
-		Assert.assertEquals(0, sr.getHits().getHits().length);
+		assertEquals(0, sr.getHits().getHits().length);
 	}
 	
 	@Test
@@ -455,9 +457,9 @@ public class QueryTest {
 		
 		TermsFacet termsFacet = sr.getFacets().facet(TermsFacet.class, "test1");
 
-		Assert.assertEquals(1, termsFacet.getEntries().size());
+		assertEquals(1, termsFacet.getEntries().size());
 		
-		Assert.assertEquals(0, sr.getHits().getHits().length);
+		assertEquals(0, sr.getHits().getHits().length);
 	}
 
 }

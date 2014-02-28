@@ -1,5 +1,8 @@
 package com.rc.gds;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,7 +15,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -50,7 +52,7 @@ public class PerfTest {
 			map.put("__GDS_FILTERCLASS_FIELD", new String[] { "com_rc_gds_TestParent" });
 			
 			IndexResponse r = getGDS().getClient().prepareIndex("test", "test").setSource(map).execute().actionGet();
-			Assert.assertNotNull(r.getId());
+			assertNotNull(r.getId());
 			if (i % 1000 == 0)
 				System.out.println("Done " + i);
 		}
@@ -68,7 +70,7 @@ public class PerfTest {
 			map.put("__GDS_FILTERCLASS_FIELD", new String[] { "com_rc_gds_TestParent" });
 			
 			IndexResponse r = getGDS().getClient().prepareIndex("test", "test").setSource(map).execute().actionGet();
-			Assert.assertNotNull(r.getId());
+			assertNotNull(r.getId());
 			if (i % 1000 == 0)
 				System.out.println("Done " + i);
 		}
@@ -86,7 +88,7 @@ public class PerfTest {
 			testParent.name = "parent1";
 			getGDS().save().result(testParent).now();
 			
-			Assert.assertNotNull(testParent.id);
+			assertNotNull(testParent.id);
 			if (i % 1000 == 0)
 				System.out.println("Done " + i);
 		}
@@ -108,7 +110,7 @@ public class PerfTest {
 			}
 			
 			boolean success = new GDSBatcher(results.toArray(new GDSResult[0])).onAllComplete().now();
-			Assert.assertEquals(true, success);
+			assertEquals(true, success);
 			if (j % 10 == 0)
 				System.out.println("Done " + j * 100);
 		}
@@ -129,7 +131,7 @@ public class PerfTest {
 					.endObject();
 			
 			IndexResponse r = getGDS().getClient().prepareIndex("test", "test").setSource(builder).execute().actionGet();
-			Assert.assertNotNull(r.getId());
+			assertNotNull(r.getId());
 			if (i % 1000 == 0)
 				System.out.println("Done " + i);
 		}
@@ -152,7 +154,7 @@ public class PerfTest {
 		long time = System.currentTimeMillis();
 		for (int i = 0; i < 5; i++) {
 			List<TestParent> list = getGDS().query(TestParent.class).asList();
-			Assert.assertEquals(10000, list.size());
+			assertEquals(10000, list.size());
 		}
 		System.out.println("testLoadGDS ellapsed: " + (System.currentTimeMillis() - time));
 		
@@ -178,7 +180,7 @@ public class PerfTest {
 					.setQuery(QueryBuilders.matchAllQuery())
 					.setSize(1000)
 					.execute().actionGet();
-			Assert.assertEquals(1000, response.getHits().hits().length);
+			assertEquals(1000, response.getHits().hits().length);
 		}
 		System.out.println("testLoadRaw ellapsed: " + (System.currentTimeMillis() - time));
 		

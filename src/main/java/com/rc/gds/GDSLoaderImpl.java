@@ -257,10 +257,6 @@ public class GDSLoaderImpl implements GDSLoader {
 				for (MultiGetItemResponse itemResponse : response.getResponses()) {
 					Entity entity = new Entity(itemResponse.getType(), itemResponse.getResponse().getId(), itemResponse.getResponse().getSourceAsMap());
 					resultMap.put(new Key(itemResponse.getType(), itemResponse.getId()), entity);
-					if (entity.dbObject == null) {
-						result.onSuccess(null, new Exception("Item does not exist: " + itemResponse.getType() + " " + itemResponse.getId()));
-						return;
-					}
 				}
 				result.onSuccess(resultMap, null);
 			}
@@ -356,6 +352,21 @@ public class GDSLoaderImpl implements GDSLoader {
 			ExecutionException {
 		
 		final List<GDSResult<?>> results = new ArrayList<>();
+		if (entity.getDBDbObject() == null) {
+			return new GDSResult<Object>() {
+				
+				@Override
+				public Object now() {
+					return null;
+				}
+				
+				@Override
+				public GDSResult<Object> later(GDSCallback<Object> inCallback) {
+					inCallback.onSuccess(null, null);
+					return this;
+				}
+			};
+		}
 		String kind = (String) entity.getProperty(GDSClass.GDS_CLASS_FIELD);
 
 		Class<?> clazz = Class.forName(kind.replace("_", ".").replace("##", "_"));
@@ -518,7 +529,8 @@ public class GDSLoaderImpl implements GDSLoader {
 				for (int i = 0; i < keyResults.size(); i++) {
 					Object key = keyResults.get(i).now();
 					Object val = valResults.get(i).now();
-					newMap.put(key, val);
+					if (key != null && val != null)
+						newMap.put(key, val);
 				}
 			}
 		});
@@ -548,7 +560,9 @@ public class GDSLoaderImpl implements GDSLoader {
 			@Override
 			public void onSuccess(Boolean t, Throwable err) {
 				for (GDSResult<?> r : results) {
-					newCollection.add(r.now());
+					Object o = r.now();
+					if (o != null)
+						newCollection.add(r.now());
 				}
 			}
 		});
@@ -710,5 +724,5 @@ public class GDSLoaderImpl implements GDSLoader {
 			}
 		}
 	}
-
+	
 }

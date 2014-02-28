@@ -1,5 +1,8 @@
 package com.rc.gds;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,7 +11,6 @@ import java.util.Random;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.transport.RemoteTransportException;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -55,10 +57,10 @@ public class BasicTest {
 		
 		refreshIndex();
 		TestEmbedHolder loaded = getGDS().query(TestEmbedHolder.class).asList().get(0);
-		Assert.assertEquals(loaded.testEmbed1.x, 99);
-		Assert.assertEquals(loaded.testEmbed2.y, new Integer(2));
-		Assert.assertEquals(loaded.testEmbed2.z, 99L);
-		Assert.assertEquals(loaded.testEmbed1.insideEmbed.zz, new Long(109L));
+		assertEquals(loaded.testEmbed1.x, 99);
+		assertEquals(loaded.testEmbed2.y, new Integer(2));
+		assertEquals(loaded.testEmbed2.z, 99L);
+		assertEquals(loaded.testEmbed1.insideEmbed.zz, new Long(109L));
 	}
 
 	@Test
@@ -80,8 +82,8 @@ public class BasicTest {
 		
 		for (int i = 0; i < 25; i++) {
 			TestEmbed embed = loaded.testEmbedList.get(i);
-			Assert.assertEquals(i, embed.x);
-			Assert.assertEquals(null, embed.insideEmbed);
+			assertEquals(i, embed.x);
+			assertEquals(null, embed.insideEmbed);
 		}
 	}
 
@@ -102,8 +104,8 @@ public class BasicTest {
 		
 		for (int i = 0; i < 25; i++) {
 			TestEmbed embed = loaded.testEmbedMap.get("key" + i);
-			Assert.assertEquals(i, embed.x);
-			Assert.assertEquals(null, embed.insideEmbed);
+			assertEquals(i, embed.x);
+			assertEquals(null, embed.insideEmbed);
 		}
 	}
 
@@ -129,17 +131,17 @@ public class BasicTest {
 		refreshIndex();
 		
 		List<TestChild> queryList = getGDS().query(TestChild.class).asList();
-		Assert.assertEquals(2500, queryList.size());
+		assertEquals(2500, queryList.size());
 
 		TestParentList fetchParent = getGDS().load().fetch(TestParentList.class, testParentList.id).now();
-		Assert.assertEquals(20, fetchParent.testChildArr.length);
-		Assert.assertEquals(2500, fetchParent.testChildList.size());
+		assertEquals(20, fetchParent.testChildArr.length);
+		assertEquals(2500, fetchParent.testChildList.size());
 
 		for (int i = 0; i < 2500; i++) {
-			Assert.assertNotNull(fetchParent.testChildList.get(i).name);
+			assertNotNull(fetchParent.testChildList.get(i).name);
 		}
 		
-		Assert.assertEquals(2500, fetchParent.testChildList.size());
+		assertEquals(2500, fetchParent.testChildList.size());
 	}
 
 	@Test
@@ -161,10 +163,10 @@ public class BasicTest {
 		System.out.println("DD");
 		
 		TestParentMap fetchParent = getGDS().load().fetch(TestParentMap.class, testParentMap.id).now();
-		Assert.assertEquals(25, fetchParent.testChildMap.size());
+		assertEquals(25, fetchParent.testChildMap.size());
 		
 		for (int i = 0; i < 25; i++) {
-			Assert.assertEquals("child" + i, fetchParent.testChildMap.get("key" + i).name);
+			assertEquals("child" + i, fetchParent.testChildMap.get("key" + i).name);
 		}
 	}
 
@@ -179,14 +181,14 @@ public class BasicTest {
 		getGDS().save().result(map).now();
 
 		TestBasicMap map2 = getGDS().load().fetch(TestBasicMap.class, map.id).now();
-
-		Assert.assertEquals(map.testMap.size(), map2.testMap.size());
-		Assert.assertEquals(map.testMap.get("Test1"), map2.testMap.get("Test1"));
-		Assert.assertEquals(map.testMap.get("t2"), map2.testMap.get("t2"));
+		
+		assertEquals(map.testMap.size(), map2.testMap.size());
+		assertEquals(map.testMap.get("Test1"), map2.testMap.get("Test1"));
+		assertEquals(map.testMap.get("t2"), map2.testMap.get("t2"));
 
 		map.testMap.put("z", 5.5);
-
-		Assert.assertEquals(null, map2.testMap.get("z"));
+		
+		assertEquals(null, map2.testMap.get("z"));
 	}
 
 	@Test
@@ -203,16 +205,16 @@ public class BasicTest {
 		
 		refreshIndex();
 		TestParentPoly loadPoly = (TestParentPoly) getGDS().query(TestParent.class).asList().get(0);
-		Assert.assertEquals(parentPoly.param1, loadPoly.param1);
-		Assert.assertEquals(parentPoly.param2, loadPoly.param2);
-		Assert.assertEquals(parentPoly.param3, loadPoly.param3);
-		Assert.assertEquals(parentPoly.testChild.getClass(), loadPoly.testChild.getClass());
+		assertEquals(parentPoly.param1, loadPoly.param1);
+		assertEquals(parentPoly.param2, loadPoly.param2);
+		assertEquals(parentPoly.param3, loadPoly.param3);
+		assertEquals(parentPoly.testChild.getClass(), loadPoly.testChild.getClass());
 		
 		TestChildPoly loadChildPoly1 = getGDS().query(TestChildPoly.class).asList().get(0);
 		TestChildPoly loadChildPoly2 = (TestChildPoly) getGDS().query(TestChild.class).asList().get(0);
 		
-		Assert.assertEquals(loadChildPoly1.id, loadChildPoly2.id);
-		Assert.assertEquals(loadChildPoly1.bytes.get(2), loadChildPoly2.bytes.get(2));
+		assertEquals(loadChildPoly1.id, loadChildPoly2.id);
+		assertEquals(loadChildPoly1.bytes.get(2), loadChildPoly2.bytes.get(2));
 	}
 
 	@Test
@@ -234,10 +236,10 @@ public class BasicTest {
 		List<TestChild> list = getGDS().query(TestChild.class)
 				//.filter(FilterBuilders.termFilter("name", "child" + num))
 				.asList();
-
-		Assert.assertEquals(1, list.size());
-		Assert.assertEquals(testChild.id, list.get(0).id);
-		Assert.assertEquals(testChild.name, list.get(0).name);
+		
+		assertEquals(1, list.size());
+		assertEquals(testChild.id, list.get(0).id);
+		assertEquals(testChild.name, list.get(0).name);
 	}
 
 	@Test
@@ -255,9 +257,9 @@ public class BasicTest {
 		
 		refreshIndex();
 		List<TestChild> list = getGDS().query(TestChild.class).asList();
-		Assert.assertEquals(1000, list.size());
-		//Assert.assertEquals("child12", list.get(12).name);
-		//Assert.assertEquals("child22", list.get(22).name);
+		assertEquals(1000, list.size());
+		//assertEquals("child12", list.get(12).name);
+		//assertEquals("child22", list.get(22).name);
 	}
 
 	@Test
@@ -270,13 +272,13 @@ public class BasicTest {
 		testParent.testChild = testChild;
 
 		getGDS().save().result(testParent).now();
-
-		Assert.assertNotNull(testParent.id);
-		Assert.assertNotNull(testChild.id);
+		
+		assertNotNull(testParent.id);
+		assertNotNull(testChild.id);
 
 		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
-		Assert.assertEquals(testParent.name, fetchParent.name);
-		Assert.assertEquals(testParent.testChild.name, fetchParent.testChild.name);
+		assertEquals(testParent.name, fetchParent.name);
+		assertEquals(testParent.testChild.name, fetchParent.testChild.name);
 	}
 
 	@Test
@@ -289,10 +291,10 @@ public class BasicTest {
 		getGDS().save().result(test).now();
 
 		TestSubClass load = getGDS().load().fetch(TestSubClass.class, test.id).now();
-
-		Assert.assertNotNull(load.theSubClass);
-
-		Assert.assertEquals(867, load.theSubClass.i);
+		
+		assertNotNull(load.theSubClass);
+		
+		assertEquals(867, load.theSubClass.i);
 	}
 
 	@Test
@@ -306,13 +308,13 @@ public class BasicTest {
 		
 		getGDS().save().result(testParent).now();
 		
-		Assert.assertNotNull(testParent.id);
-		Assert.assertNotNull(testChild.id);
+		assertNotNull(testParent.id);
+		assertNotNull(testChild.id);
 		
 		for (int i = 0; i < 100; i++) {
 			TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
-			Assert.assertEquals(testParent.name, fetchParent.name);
-			Assert.assertEquals(testParent.testChild.name, fetchParent.testChild.name);
+			assertEquals(testParent.name, fetchParent.name);
+			assertEquals(testParent.testChild.name, fetchParent.testChild.name);
 			
 			getGDS().save().result(fetchParent).now();
 		}
@@ -334,7 +336,7 @@ public class BasicTest {
 		getGDS().save().result(testParent).now();
 
 		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
-		Assert.assertEquals(testParent.testChild.name, fetchParent.testChild.name);
+		assertEquals(testParent.testChild.name, fetchParent.testChild.name);
 	}
 	
 	@Test
@@ -357,12 +359,12 @@ public class BasicTest {
 		testParent.testChild = tc1;
 
 		getGDS().save().result(testParent).now();
-
-		Assert.assertNotNull(testParent.id);
-		Assert.assertNotNull(tc1.id);
-		Assert.assertNotNull(tc2.id);
-		Assert.assertNotNull(tc3.id);
-		Assert.assertNotNull(tc4.id);
+		
+		assertNotNull(testParent.id);
+		assertNotNull(tc1.id);
+		assertNotNull(tc2.id);
+		assertNotNull(tc3.id);
+		assertNotNull(tc4.id);
 
 		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
 		TestChildChild f1 = (TestChildChild) fetchParent.testChild;
@@ -370,10 +372,10 @@ public class BasicTest {
 		TestChildChild f3 = f2.deepChild;
 		TestChildChild f4 = f3.deepChild;
 		
-		Assert.assertEquals(tc1.name, f1.name);
-		Assert.assertEquals(tc2.name, f2.name);
-		Assert.assertEquals(tc3.name, f3.name);
-		Assert.assertEquals(tc4.name, f4.name);
+		assertEquals(tc1.name, f1.name);
+		assertEquals(tc2.name, f2.name);
+		assertEquals(tc3.name, f3.name);
+		assertEquals(tc4.name, f4.name);
 	}
 	
 	@Test
@@ -406,11 +408,11 @@ public class BasicTest {
 		
 		getGDS().save().result(testParent).now();
 		
-		Assert.assertNotNull(testParent.id);
-		Assert.assertNotNull(tc1.id);
-		Assert.assertNotNull(tc2.id);
-		Assert.assertNotNull(tc3.id);
-		Assert.assertNotNull(tc4.id);
+		assertNotNull(testParent.id);
+		assertNotNull(tc1.id);
+		assertNotNull(tc2.id);
+		assertNotNull(tc3.id);
+		assertNotNull(tc4.id);
 		
 		System.out.println(tcshared.id);
 
@@ -422,12 +424,12 @@ public class BasicTest {
 		TestChildChild fs1 = f4.deepChild;
 		TestChildChild fs2 = f4.deepChild2;
 		
-		Assert.assertEquals(tc1.name, f1.name);
-		Assert.assertEquals(tc2.name, f2.name);
-		Assert.assertEquals(tc3.name, f3.name);
-		Assert.assertEquals(tc4.name, f4.name);
-		Assert.assertEquals(tcshared.name, fs1.name);
-		Assert.assertEquals(tcshared.name, fs2.name);
+		assertEquals(tc1.name, f1.name);
+		assertEquals(tc2.name, f2.name);
+		assertEquals(tc3.name, f3.name);
+		assertEquals(tc4.name, f4.name);
+		assertEquals(tcshared.name, fs1.name);
+		assertEquals(tcshared.name, fs2.name);
 	}
 	
 	@Test
@@ -443,18 +445,18 @@ public class BasicTest {
 		
 		getGDS().save().result(child1).now();
 		
-		Assert.assertNotNull(child1.id);
-		Assert.assertNotNull(child2.id);
+		assertNotNull(child1.id);
+		assertNotNull(child2.id);
 		
 		TestChildChild fetch1 = getGDS().load().fetch(TestChildChild.class, child1.id).now();
 		
-		Assert.assertEquals(child1.name, fetch1.name);
-		Assert.assertEquals(child2.name, fetch1.deepChild.name);
+		assertEquals(child1.name, fetch1.name);
+		assertEquals(child2.name, fetch1.deepChild.name);
 		
 		TestChildChild fetch2 = getGDS().load().fetch(TestChildChild.class, child2.id).now();
 		
-		Assert.assertEquals(child2.name, fetch2.name);
-		Assert.assertEquals(child1.name, fetch2.deepChild.name);
+		assertEquals(child2.name, fetch2.name);
+		assertEquals(child1.name, fetch2.deepChild.name);
 	}
 	
 	@Test
@@ -480,10 +482,10 @@ public class BasicTest {
 		TestParentList fetchParent = getGDS().load().fetch(TestParentList.class, testParentList.id).now();
 		
 		for (int i = 0; i < 30; i++) {
-			Assert.assertNotNull(fetchParent.testChildList.get(i).name);
+			assertNotNull(fetchParent.testChildList.get(i).name);
 		}
 		
-		Assert.assertEquals(30, fetchParent.testChildList.size());
+		assertEquals(30, fetchParent.testChildList.size());
 	}
 	
 	@Test
@@ -504,17 +506,17 @@ public class BasicTest {
 		
 		getGDS().save().result(testParentMap).now();
 		
-		Assert.assertNotNull(testParentMap.id);
+		assertNotNull(testParentMap.id);
 		for (TestChild testChild : testParentMap.testChildMap.values())
-			Assert.assertNotNull(testChild.id);
+			assertNotNull(testChild.id);
 
 		TestParentMap fetchParent = getGDS().load().fetch(TestParentMap.class, testParentMap.id).now();
-		Assert.assertEquals(30, fetchParent.testChildMap.size());
+		assertEquals(30, fetchParent.testChildMap.size());
 
 		for (int i = 0; i < 10; i++) {
-			Assert.assertEquals("child" + i, fetchParent.testChildMap.get("key " + i).name);
-			Assert.assertEquals("child" + i, fetchParent.testChildMap.get("key2 " + i).name);
-			Assert.assertEquals("child" + i, fetchParent.testChildMap.get("key3 " + i).name);
+			assertEquals("child" + i, fetchParent.testChildMap.get("key " + i).name);
+			assertEquals("child" + i, fetchParent.testChildMap.get("key2 " + i).name);
+			assertEquals("child" + i, fetchParent.testChildMap.get("key3 " + i).name);
 		}
 	}
 	
@@ -535,13 +537,13 @@ public class BasicTest {
 		GDSResult<Boolean> allResult = new GDSBatcher(result1, result2, result3, result4, result5).onAllComplete();
 		boolean success = allResult.now();
 		
-		Assert.assertEquals(true, success);
+		assertEquals(true, success);
 		
-		Assert.assertNotNull(testParent1.id);
-		Assert.assertNotNull(testParent2.id);
-		Assert.assertNotNull(testParent3.id);
-		Assert.assertNotNull(testParent4.id);
-		Assert.assertNotNull(testParent5.id);
+		assertNotNull(testParent1.id);
+		assertNotNull(testParent2.id);
+		assertNotNull(testParent3.id);
+		assertNotNull(testParent4.id);
+		assertNotNull(testParent5.id);
 	}
 	
 	@Test
@@ -550,14 +552,14 @@ public class BasicTest {
 		testVersionedObject.name = "one";
 		Key key1 = getGDS().save(testVersionedObject).now();
 		
-		Assert.assertNotNull(testVersionedObject.id);
-		Assert.assertEquals(1, testVersionedObject.ver);
+		assertNotNull(testVersionedObject.id);
+		assertEquals(1, testVersionedObject.ver);
 		
 		testVersionedObject.name = "two";
 		Key key2 = getGDS().save(testVersionedObject).now();
 		
-		Assert.assertEquals(2, testVersionedObject.ver);
-		Assert.assertEquals(key1.id, key2.id);
+		assertEquals(2, testVersionedObject.ver);
+		assertEquals(key1.id, key2.id);
 	}
 	
 	@Test(expected = VersionConflictEngineException.class)
@@ -567,14 +569,14 @@ public class BasicTest {
 			testVersionedObject.name = "one";
 			Key key1 = getGDS().save(testVersionedObject).now();
 			
-			Assert.assertNotNull(testVersionedObject.id);
-			Assert.assertEquals(1, testVersionedObject.ver);
+			assertNotNull(testVersionedObject.id);
+			assertEquals(1, testVersionedObject.ver);
 			
 			testVersionedObject.name = "two";
 			Key key2 = getGDS().save(testVersionedObject).now();
 			
-			Assert.assertEquals(2, testVersionedObject.ver);
-			Assert.assertEquals(key1.id, key2.id);
+			assertEquals(2, testVersionedObject.ver);
+			assertEquals(key1.id, key2.id);
 			
 			testVersionedObject.ver = 1;
 			getGDS().save(testVersionedObject).now();
