@@ -53,57 +53,51 @@ public class GDSLoaderImpl implements GDSLoader {
 				return callback;
 			}
 			
-			callback.runOnStart = new Runnable() {
-				
-				@Override
-				public void run() {
-					gds.getClient().prepareGet(gds.indexFor(key.kind), key.kind, key.id)
-							.execute(new ActionListener<GetResponse>() {
-								
-								@Override
-								public void onResponse(GetResponse response) {
-									if (!response.isExists()) {
-										callback.onSuccess(null, null);
-										return;
-									}
-									Entity entity = new Entity(kind, response.getId(), response.getSourceAsMap());
+			gds.getClient().prepareGet(gds.indexFor(key.kind), key.kind, key.id)
+					.execute(new ActionListener<GetResponse>() {
+						
+						@Override
+						public void onResponse(GetResponse response) {
+							if (!response.isExists()) {
+								callback.onSuccess(null, null);
+								return;
+							}
+							Entity entity = new Entity(kind, response.getId(), response.getSourceAsMap());
+							
+							final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
+							try {
+								entityToPOJO(entity, entity.getKey().getId(), linksToFetch).later(new GDSCallback<Object>() {
 									
-									final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
-									try {
-										entityToPOJO(entity, entity.getKey().getId(), linksToFetch).later(new GDSCallback<Object>() {
-											
-											@Override
-											public void onSuccess(final Object pojo, Throwable err) {
-												try {
-													if (err != null)
-														throw err;
-													localCache.put(key, pojo);
-													fetchLinks(linksToFetch).later(new GDSCallback<List<GDSLink>>() {
-														
-														@Override
-														public void onSuccess(List<GDSLink> t, Throwable err) {
-															callback.onSuccess((T) pojo, err);
-														}
-													});
-												} catch (Throwable e) {
-													callback.onSuccess(null, e);
+									@Override
+									public void onSuccess(final Object pojo, Throwable err) {
+										try {
+											if (err != null)
+												throw err;
+											localCache.put(key, pojo);
+											fetchLinks(linksToFetch).later(new GDSCallback<List<GDSLink>>() {
+												
+												@Override
+												public void onSuccess(List<GDSLink> t, Throwable err) {
+													callback.onSuccess((T) pojo, err);
 												}
-											}
-										});
-									} catch (Throwable e) {
-										callback.onSuccess(null, e);
+											});
+										} catch (Throwable e) {
+											callback.onSuccess(null, e);
+										}
 									}
-								}
-								
-								@Override
-								public void onFailure(Throwable e) {
-									callback.onSuccess(null, e);
-								}
-							});
-				}
-			};
+								});
+							} catch (Throwable e) {
+								callback.onSuccess(null, e);
+							}
+						}
+						
+						@Override
+						public void onFailure(Throwable e) {
+							callback.onSuccess(null, e);
+						}
+					});
 			
-			return ESMapCreator.ensureIndexCreated(gds, clazz, callback);
+			return callback;
 		} catch (RuntimeException ex) {
 			throw ex;
 		} catch (Exception ex) {
