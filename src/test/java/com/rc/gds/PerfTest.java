@@ -24,7 +24,7 @@ import com.rc.gds.interfaces.Key;
 public class PerfTest {
 	
 	private static GDSImpl getGDS() {
-		return new GDSImpl(false, "gdstest");
+		return new GDSImpl(true, "gdstest");
 	}
 	
 	@Before

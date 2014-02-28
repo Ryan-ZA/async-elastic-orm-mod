@@ -45,8 +45,25 @@ public class GDSSaverImpl implements GDSSaver {
 		return this;
 	}
 	
-	private GDSResult<Entity> createEntity(Object pojo, boolean isEmbedded) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
-		Map<String, GDSField> fieldMap = GDSField.createMapFromObject(gds, pojo);
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private GDSResult<Entity> createEntity(final Object pojo, final boolean isEmbedded) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+		final GDSAsyncImpl result = new GDSAsyncImpl<>();
+		result.runOnStart = new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					createEntityInt(pojo, isEmbedded).later(result);
+				} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+					result.onSuccess(null, e);
+				}
+			}
+		};
+		return ESMapCreator.ensureIndexCreated(gds, pojo.getClass(), result);
+	}
+	
+	private GDSResult<Entity> createEntityInt(Object pojo, boolean isEmbedded) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+		Map<String, GDSField> fieldMap = GDSField.createMapFromObject(pojo);
 		
 		GDSClass.onPreSave(gds, pojo);
 		
@@ -251,7 +268,7 @@ public class GDSSaverImpl implements GDSSaver {
 	
 	private GDSResult<Key> createKeyForRegularPOJO(final Object fieldValue) throws IllegalArgumentException, IllegalAccessException {
 		final String fieldValueKind = GDSClass.getKind(fieldValue);
-		Map<String, GDSField> map = GDSField.createMapFromObject(gds, fieldValue);
+		Map<String, GDSField> map = GDSField.createMapFromObject(fieldValue);
 		final GDSField idfield = map.get(GDSField.GDS_ID_FIELD);
 		Object idFieldValue = GDSField.getValue(idfield, fieldValue);
 		String id = idfield == null ? null : (String) idFieldValue;
@@ -309,7 +326,7 @@ public class GDSSaverImpl implements GDSSaver {
 									if (err != null)
 										throw err;
 									
-									Map<String, GDSField> fieldMap = GDSField.createMapFromObject(gds, pojo);
+									Map<String, GDSField> fieldMap = GDSField.createMapFromObject(pojo);
 									GDSField idfield = fieldMap.get(GDSField.GDS_ID_FIELD);
 									idfield.field.set(pojo, key.getId());
 									GDSField verField = fieldMap.get(GDSField.GDS_VERSION_FIELD);

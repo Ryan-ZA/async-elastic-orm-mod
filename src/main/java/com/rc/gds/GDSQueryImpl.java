@@ -2,6 +2,7 @@ package com.rc.gds;
 
 import java.util.List;
 
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -30,7 +31,7 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		this.gds = gds;
 		this.clazz = clazz;
 		
-		ESMapCreator.ensureIndexCreated(gds, clazz);
+		ESMapCreator.ensureIndexCreated(gds, clazz, null);
 		collectionName = GDSClass.getKind(clazz);
 		
 		filter = FilterBuilders.queryFilter(QueryBuilders.matchPhraseQuery(GDSClass.GDS_FILTERCLASS_FIELD, GDSClass.fixName(clazz.getName())));
@@ -61,7 +62,7 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 	 */
 	public QueryBuilder createPojoFilter(String field, String operator, Object pojo) {
 		try {
-			GDSField idField = GDSField.createMapFromObject(gds, pojo).get(GDSField.GDS_ID_FIELD);
+			GDSField idField = GDSField.createMapFromObject(pojo).get(GDSField.GDS_ID_FIELD);
 			if (idField == null)
 				throw new RuntimeException("Class " + pojo.getClass().getName() + " does not have an ID field!");
 			
@@ -131,10 +132,23 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		
 		requestBuilder.setFrom(0);
 		requestBuilder.setSize(10000);
-
-		SearchResponse searchResponse = requestBuilder.execute().actionGet();
 		
-		return new GDSQueryResultImpl<T>(gds, clazz, searchResponse.getHits().iterator(), searchResponse);
+		final GDSAsyncImpl<SearchResponse> sr = new GDSAsyncImpl<>();
+
+		requestBuilder.execute(new ActionListener<SearchResponse>() {
+			
+			@Override
+			public void onResponse(SearchResponse response) {
+				sr.onSuccess(response, null);
+			}
+			
+			@Override
+			public void onFailure(Throwable e) {
+				sr.onSuccess(null, e);
+			}
+		});
+		
+		return new GDSQueryResultImpl<T>(gds, clazz, sr);
 	}
 	
 	/*

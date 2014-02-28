@@ -153,8 +153,8 @@ public class GDSField {
 	 * @throws IllegalArgumentException
 	 * @throws IllegalAccessException
 	 */
-	public static Map<String, GDSField> createMapFromObject(GDSImpl gds, Object obj) throws IllegalArgumentException, IllegalAccessException {
-		return createMapFromClass(gds, obj.getClass());
+	public static Map<String, GDSField> createMapFromObject(Object obj) throws IllegalArgumentException, IllegalAccessException {
+		return createMapFromClass(obj.getClass());
 	}
 	
 	/**
@@ -165,7 +165,7 @@ public class GDSField {
 	 * @throws IllegalArgumentException
 	 * @throws IllegalAccessException
 	 */
-	public static Map<String, GDSField> createMapFromClass(GDSImpl gds, Class<?> clazz) throws IllegalArgumentException, IllegalAccessException {
+	public static Map<String, GDSField> createMapFromClass(Class<?> clazz) throws IllegalArgumentException, IllegalAccessException {
 		if (reflectionCache.containsKey(clazz)) {
 			return reflectionCache.get(clazz);
 		}
@@ -207,16 +207,12 @@ public class GDSField {
 		}
 
 		reflectionCache.put(originalClazz, map);
-		
-		GDSField idfield = map.get(GDS_ID_FIELD);
-		if (idfield != null)
-			ESMapCreator.ensureIndexCreated(gds, originalClazz);
 
 		return map;
 	}
 
 	public static String getID(Object pojo) throws IllegalArgumentException, IllegalAccessException {
-		Map<String, GDSField> map = createMapFromObject(null, pojo);
+		Map<String, GDSField> map = createMapFromObject(pojo);
 		GDSField idfield = map.get(GDS_ID_FIELD);
 
 		if (idfield == null)

@@ -11,6 +11,7 @@ public class GDSAsyncImpl<T> implements GDSCallback<T>, GDSResult<T> {
 	T result = null;
 	Throwable resultErr = null;
 	List<GDSCallback<T>> callbacks = new ArrayList<>();
+	volatile Runnable runOnStart = null;
 	
 	public GDSAsyncImpl() {
 	}
@@ -22,9 +23,14 @@ public class GDSAsyncImpl<T> implements GDSCallback<T>, GDSResult<T> {
 	public GDSAsyncImpl(Throwable resultErr) {
 		this.resultErr = resultErr;
 	}
+	
+	public GDSAsyncImpl(Runnable runOnStart) {
+		this.runOnStart = runOnStart;
+	}
 
 	@Override
 	public synchronized GDSResult<T> later(GDSCallback<T> inCallback) {
+		runOnStart();
 		callbacks.add(inCallback);
 		if (result != null || resultErr != null)
 			inCallback.onSuccess(result, resultErr);
@@ -33,6 +39,7 @@ public class GDSAsyncImpl<T> implements GDSCallback<T>, GDSResult<T> {
 	
 	@Override
 	public T now() {
+		runOnStart();
 		testErr();
 
 		if (result != null)
@@ -62,6 +69,13 @@ public class GDSAsyncImpl<T> implements GDSCallback<T>, GDSResult<T> {
 		}
 	}
 	
+	private void runOnStart() {
+		if (runOnStart != null) {
+			runOnStart.run();
+			runOnStart = null;
+		}
+	}
+
 	@Override
 	public synchronized void onSuccess(T t, Throwable err) {
 		result = t;

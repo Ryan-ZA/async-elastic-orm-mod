@@ -11,6 +11,7 @@ import org.elasticsearch.search.SearchHit;
 
 import com.rc.gds.interfaces.GDSCallback;
 import com.rc.gds.interfaces.GDSMultiResult;
+import com.rc.gds.interfaces.GDSResult;
 import com.rc.gds.interfaces.GDSResultListReceiver;
 import com.rc.gds.interfaces.GDSResultReceiver;
 
@@ -19,24 +20,43 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 	private static final int MAX_DEPTH = 100;
 
 	GDSImpl gds;
-	Iterator<SearchHit> iterator;
 	Class<T> clazz;
 	GDSLoaderImpl loader;
-	SearchResponse searchResponse;
 	private boolean finished = false;
 	int depth = 0;
 	ExecutorService deepStackExecutor;
+	GDSResult<SearchResponse> sr;
 	
-	protected GDSQueryResultImpl(GDSImpl gds, Class<T> clazz, Iterator<SearchHit> iterator, SearchResponse searchResponse) {
+	private Iterator<SearchHit> iterator = null;
+	
+	protected GDSQueryResultImpl(GDSImpl gds, Class<T> clazz, GDSResult<SearchResponse> sr) {
 		this.gds = gds;
-		this.iterator = iterator;
 		this.clazz = clazz;
-		this.searchResponse = searchResponse;
+		this.sr = sr;
 		loader = new GDSLoaderImpl(gds);
 	}
 	
 	@Override
 	public void later(final GDSResultReceiver<T> resultReceiver) {
+		if (iterator != null) {
+			doFetch(resultReceiver);
+		} else {
+			sr.later(new GDSCallback<SearchResponse>() {
+				
+				@Override
+				public void onSuccess(SearchResponse searchResponse, Throwable err) {
+					if (err != null) {
+						resultReceiver.onError(err);
+					} else {
+						iterator = searchResponse.getHits().iterator();
+						doFetch(resultReceiver);
+					}
+				}
+			});
+		}
+	}
+	
+	private void doFetch(final GDSResultReceiver<T> resultReceiver) {
 		Entity entity = null;
 		SearchHit hit = null;
 		boolean notfinished;
@@ -70,6 +90,7 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 							@Override
 							public void onSuccess(List<GDSLink> t, Throwable err) {
 								if (err != null) {
+									err.printStackTrace();
 									shutdownDeepStackExecutor();
 									resultReceiver.onError(err);
 								} else {
@@ -83,6 +104,7 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 							}
 						});
 					} catch (Throwable e) {
+						e.printStackTrace();
 						//resultReceiver.onError(e);
 						if (resultReceiver.receiveNext(null)) {
 							sendNext(resultReceiver);
@@ -94,6 +116,7 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 				}
 			});
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException("Error completing query on " + clazz, e);
 		}
 	}
@@ -189,11 +212,11 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 
 				@Override
 				public void run() {
-					later(resultReceiver);
+					doFetch(resultReceiver);
 				}
 			});
 		} else {
-			later(resultReceiver);
+			doFetch(resultReceiver);
 		}
 	}
 

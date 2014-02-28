@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.elasticsearch.index.engine.VersionConflictEngineException;
+import org.elasticsearch.transport.RemoteTransportException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -139,7 +140,6 @@ public class BasicTest {
 		}
 		
 		Assert.assertEquals(2500, fetchParent.testChildList.size());
-
 	}
 
 	@Test
@@ -377,6 +377,60 @@ public class BasicTest {
 	}
 	
 	@Test
+	public void testDeepSharedChild() {
+		TestParent testParent = new TestParent();
+		
+		TestChildChild tcshared = new TestChildChild();
+		
+		TestChildChild tc1 = new TestChildChild();
+		TestChildChild tc2 = new TestChildChild();
+		TestChildChild tc3 = new TestChildChild();
+		TestChildChild tc4 = new TestChildChild();
+		
+		tcshared.name = "shared";
+		
+		tc1.name = "tc1";
+		tc1.deepChild = tc2;
+		tc2.name = "tc2";
+		tc2.deepChild = tc3;
+		tc2.deepChild2 = tc4;
+		tc3.name = "tc3";
+		tc3.deepChild = tc4;
+		tc3.deepChild2 = tcshared;
+		tc4.name = "tc4";
+		tc4.deepChild = tcshared;
+		tc4.deepChild2 = tcshared;
+		
+		testParent.name = "parent1";
+		testParent.testChild = tc1;
+		
+		getGDS().save().result(testParent).now();
+		
+		Assert.assertNotNull(testParent.id);
+		Assert.assertNotNull(tc1.id);
+		Assert.assertNotNull(tc2.id);
+		Assert.assertNotNull(tc3.id);
+		Assert.assertNotNull(tc4.id);
+		
+		System.out.println(tcshared.id);
+
+		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
+		TestChildChild f1 = (TestChildChild) fetchParent.testChild;
+		TestChildChild f2 = f1.deepChild;
+		TestChildChild f3 = f2.deepChild;
+		TestChildChild f4 = f3.deepChild;
+		TestChildChild fs1 = f4.deepChild;
+		TestChildChild fs2 = f4.deepChild2;
+		
+		Assert.assertEquals(tc1.name, f1.name);
+		Assert.assertEquals(tc2.name, f2.name);
+		Assert.assertEquals(tc3.name, f3.name);
+		Assert.assertEquals(tc4.name, f4.name);
+		Assert.assertEquals(tcshared.name, fs1.name);
+		Assert.assertEquals(tcshared.name, fs2.name);
+	}
+	
+	@Test
 	public void testBidirectional() {
 		TestChildChild child1 = new TestChildChild();
 		child1.name = "test1";
@@ -507,22 +561,26 @@ public class BasicTest {
 	}
 	
 	@Test(expected = VersionConflictEngineException.class)
-	public void testVersionBadUpdates() {
-		TestVersionedObject testVersionedObject = new TestVersionedObject();
-		testVersionedObject.name = "one";
-		Key key1 = getGDS().save(testVersionedObject).now();
-		
-		Assert.assertNotNull(testVersionedObject.id);
-		Assert.assertEquals(1, testVersionedObject.ver);
-		
-		testVersionedObject.name = "two";
-		Key key2 = getGDS().save(testVersionedObject).now();
-		
-		Assert.assertEquals(2, testVersionedObject.ver);
-		Assert.assertEquals(key1.id, key2.id);
-		
-		testVersionedObject.ver = 1;
-		getGDS().save(testVersionedObject).now();
+	public void testVersionBadUpdates() throws Throwable {
+		try {
+			TestVersionedObject testVersionedObject = new TestVersionedObject();
+			testVersionedObject.name = "one";
+			Key key1 = getGDS().save(testVersionedObject).now();
+			
+			Assert.assertNotNull(testVersionedObject.id);
+			Assert.assertEquals(1, testVersionedObject.ver);
+			
+			testVersionedObject.name = "two";
+			Key key2 = getGDS().save(testVersionedObject).now();
+			
+			Assert.assertEquals(2, testVersionedObject.ver);
+			Assert.assertEquals(key1.id, key2.id);
+			
+			testVersionedObject.ver = 1;
+			getGDS().save(testVersionedObject).now();
+		} catch (RemoteTransportException ex) {
+			throw ex.getCause();
+		}
 	}
 
 }

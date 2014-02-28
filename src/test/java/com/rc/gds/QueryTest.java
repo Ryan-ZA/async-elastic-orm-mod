@@ -16,7 +16,7 @@ import org.junit.Test;
 public class QueryTest {
 
 	private static GDSImpl getGDS() {
-		return new GDSImpl(false, "gdstest");
+		return new GDSImpl(true, "gdstest");
 	}
 	
 	@BeforeClass
