@@ -145,8 +145,8 @@ public class GDSImpl implements GDS {
 	}
 
 	@Override
-	public GDSResult<Object> load(String kind, String id) {
-		return load().fetch(new Key(kind, id));
+	public GDSResult<Object> load(Key key) {
+		return load().fetch(key);
 	}
 	
 	@Override
@@ -188,13 +188,7 @@ public class GDSImpl implements GDS {
 					
 					final List<T> resultList = new ArrayList<>();
 					for (Key key : keys) {
-						Object o = map.get(key);
-						if (o != null && o.getClass() == clazz) {
-							resultList.add((T) map.get(key));
-						} else {
-							result.onSuccess(null, new Exception("Retrieved object for " + clazz + " is " + o));
-							return;
-						}
+						resultList.add((T) map.get(key));
 					}
 					result.onSuccess(resultList, null);
 				}

@@ -29,6 +29,7 @@ public class GDSSaverImpl implements GDSSaver {
 	GDSImpl gds;
 	boolean recursiveUpdate;
 	List<Object> alreadyStoredObjects;
+	int retrycount = 0;
 	
 	protected GDSSaverImpl(GDSImpl gds) {
 		this.gds = gds;
@@ -53,8 +54,24 @@ public class GDSSaverImpl implements GDSSaver {
 			@Override
 			public void run() {
 				try {
-					createEntityInt(pojo, isEmbedded).later(result);
-				} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+					GDSResult<?> preSaveResult = GDSClass.onPreSave(gds, pojo);
+					if (preSaveResult == null) {
+						createEntityInt(pojo, isEmbedded).later(result);
+					} else {
+						preSaveResult.later(new GDSCallback() {
+							
+							@Override
+							public void onSuccess(Object t, Throwable err) {
+								try {
+									createEntityInt(pojo, isEmbedded).later(result);
+								} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+									result.onSuccess(null, e);
+								}
+							}
+						});
+					}
+					
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 					result.onSuccess(null, e);
 				}
 			}
@@ -64,8 +81,6 @@ public class GDSSaverImpl implements GDSSaver {
 	
 	private GDSResult<Entity> createEntityInt(Object pojo, boolean isEmbedded) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		Map<String, GDSField> fieldMap = GDSField.createMapFromObject(pojo);
-		
-		GDSClass.onPreSave(gds, pojo);
 		
 		String id = null;
 		if (!isEmbedded) {
@@ -320,8 +335,9 @@ public class GDSSaverImpl implements GDSSaver {
 					if (err == null) {
 						saveToDatastore(entity, isUpdate).later(new GDSCallback<Key>() {
 							
+							@SuppressWarnings({ "rawtypes", "unchecked" })
 							@Override
-							public void onSuccess(Key key, Throwable err) {
+							public void onSuccess(final Key key, Throwable err) {
 								try {
 									if (err != null)
 										throw err;
@@ -332,8 +348,19 @@ public class GDSSaverImpl implements GDSSaver {
 									GDSField verField = fieldMap.get(GDSField.GDS_VERSION_FIELD);
 									if (verField != null)
 										verField.field.setLong(pojo, key.version);
-									GDSClass.onPostSave(gds, pojo);
-									result.onSuccess(key, err);
+									
+									GDSResult<?> postSaveResult = GDSClass.onPostSave(gds, pojo);
+									if (postSaveResult == null) {
+										result.onSuccess(key, null);
+									} else {
+										postSaveResult.later(new GDSCallback() {
+											
+											@Override
+											public void onSuccess(Object t, Throwable err) {
+												result.onSuccess(key, err);
+											}
+										});
+									}
 								} catch (Throwable e) {
 									result.onSuccess(null, e);
 								}
@@ -372,7 +399,8 @@ public class GDSSaverImpl implements GDSSaver {
 					
 					@Override
 					public void onFailure(Throwable e) {
-						if (e instanceof EsRejectedExecutionException) {
+						retrycount++;
+						if (e instanceof EsRejectedExecutionException && retrycount < 500) {
 							try {
 								System.out.println("Retrying...");
 								Thread.sleep(50);
@@ -399,7 +427,8 @@ public class GDSSaverImpl implements GDSSaver {
 					
 					@Override
 					public void onFailure(Throwable e) {
-						if (e instanceof EsRejectedExecutionException) {
+						retrycount++;
+						if (e instanceof EsRejectedExecutionException && retrycount < 500) {
 							try {
 								System.out.println("Retrying...");
 								Thread.sleep(50);

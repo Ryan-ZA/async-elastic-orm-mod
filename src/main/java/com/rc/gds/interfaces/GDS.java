@@ -44,7 +44,7 @@ public interface GDS {
 	 * 
 	 * @return
 	 */
-	public abstract GDSResult<Object> load(String kind, String id);
+	public abstract GDSResult<Object> load(Key key);
 	
 	/**
 	 * Fetch a single pojo

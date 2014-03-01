@@ -27,8 +27,6 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 	ExecutorService deepStackExecutor;
 	GDSResult<SearchResponse> sr;
 	
-	private Iterator<SearchHit> iterator = null;
-	
 	protected GDSQueryResultImpl(GDSImpl gds, Class<T> clazz, GDSResult<SearchResponse> sr) {
 		this.gds = gds;
 		this.clazz = clazz;
@@ -38,25 +36,20 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 	
 	@Override
 	public void later(final GDSResultReceiver<T> resultReceiver) {
-		if (iterator != null) {
-			doFetch(resultReceiver);
-		} else {
-			sr.later(new GDSCallback<SearchResponse>() {
-				
-				@Override
-				public void onSuccess(SearchResponse searchResponse, Throwable err) {
-					if (err != null) {
-						resultReceiver.onError(err);
-					} else {
-						iterator = searchResponse.getHits().iterator();
-						doFetch(resultReceiver);
-					}
+		sr.later(new GDSCallback<SearchResponse>() {
+			
+			@Override
+			public void onSuccess(SearchResponse searchResponse, Throwable err) {
+				if (err != null) {
+					resultReceiver.onError(err);
+				} else {
+					doFetch(resultReceiver, searchResponse.getHits().iterator());
 				}
-			});
-		}
+			}
+		});
 	}
 	
-	private void doFetch(final GDSResultReceiver<T> resultReceiver) {
+	private void doFetch(final GDSResultReceiver<T> resultReceiver, final Iterator<SearchHit> iterator) {
 		Entity entity = null;
 		SearchHit hit = null;
 		boolean notfinished;
@@ -95,7 +88,7 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 									resultReceiver.onError(err);
 								} else {
 									if (resultReceiver.receiveNext((T) pojo)) {
-										sendNext(resultReceiver);
+										sendNext(resultReceiver, iterator);
 									} else {
 										shutdownDeepStackExecutor();
 										resultReceiver.finished();
@@ -104,10 +97,9 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 							}
 						});
 					} catch (Throwable e) {
-						e.printStackTrace();
 						//resultReceiver.onError(e);
 						if (resultReceiver.receiveNext(null)) {
-							sendNext(resultReceiver);
+							sendNext(resultReceiver, iterator);
 						} else {
 							shutdownDeepStackExecutor();
 							resultReceiver.finished();
@@ -200,8 +192,8 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 		if (deepStackExecutor != null)
 			deepStackExecutor.shutdown();
 	}
-
-	private void sendNext(final GDSResultReceiver<T> resultReceiver) {
+	
+	private void sendNext(final GDSResultReceiver<T> resultReceiver, final Iterator<SearchHit> iterator) {
 		depth++;
 		if (depth > MAX_DEPTH) {
 			depth = 0;
@@ -212,11 +204,11 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 
 				@Override
 				public void run() {
-					doFetch(resultReceiver);
+					doFetch(resultReceiver, iterator);
 				}
 			});
 		} else {
-			doFetch(resultReceiver);
+			doFetch(resultReceiver, iterator);
 		}
 	}
 

@@ -2,6 +2,7 @@ package com.rc.gds;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -582,6 +583,28 @@ public class BasicTest {
 			getGDS().save(testVersionedObject).now();
 		} catch (RemoteTransportException ex) {
 			throw ex.getCause();
+		}
+	}
+	
+	@Test
+	public void testPreSave() {
+		for (int i = 0; i < 500; i++) {
+			TestPreSave preSave = new TestPreSave();
+			TestPreSave.staticTestChild = new TestChild();
+			assertNull(TestPreSave.staticTestChild.id);
+			getGDS().save(preSave).now();
+			assertNotNull(TestPreSave.staticTestChild.id);
+		}
+	}
+	
+	@Test
+	public void testPostSave() {
+		for (int i = 0; i < 500; i++) {
+			TestPostSave postSave = new TestPostSave();
+			TestPostSave.staticTestChild = new TestChild();
+			assertNull(TestPostSave.staticTestChild.id);
+			getGDS().save(postSave).now();
+			assertNotNull(TestPostSave.staticTestChild.id);
 		}
 	}
 

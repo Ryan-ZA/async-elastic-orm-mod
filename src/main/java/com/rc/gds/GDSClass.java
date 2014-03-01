@@ -15,6 +15,7 @@ import com.rc.gds.annotation.PostSave;
 import com.rc.gds.annotation.PreDelete;
 import com.rc.gds.annotation.PreSave;
 import com.rc.gds.interfaces.GDS;
+import com.rc.gds.interfaces.GDSResult;
 
 public class GDSClass {
 
@@ -112,12 +113,13 @@ public class GDSClass {
 		}
 	}
 	
-	private static void callAnnotatedMethod(GDS gds, Class<? extends Annotation> annotation, Map<Class<?>, Method> annotationMap, Object pojo) throws IllegalAccessException,
+	private static GDSResult<?> callAnnotatedMethod(GDS gds, Class<? extends Annotation> annotation, Map<Class<?>, Method> annotationMap, Object pojo)
+			throws IllegalAccessException,
 			IllegalArgumentException, InvocationTargetException {
 		Method callMethod = annotationMap.get(pojo.getClass());
 		
 		if (callMethod == null) {
-			for (Method method : pojo.getClass().getMethods()) {
+			for (Method method : pojo.getClass().getDeclaredMethods()) {
 				if (method.getAnnotation(annotation) != null) {
 					callMethod = method;
 					callMethod.setAccessible(true);
@@ -132,24 +134,24 @@ public class GDSClass {
 		}
 		
 		if (callMethod == nullMethod)
-			return;
+			return null;
 		
 		if (callMethod.getParameterTypes().length == 0)
-			callMethod.invoke(pojo);
+			return (GDSResult<?>) callMethod.invoke(pojo);
 		else
-			callMethod.invoke(pojo, gds);
+			return (GDSResult<?>) callMethod.invoke(pojo, gds);
 	}
 	
-	public static void onPreSave(GDS gds, Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		callAnnotatedMethod(gds, PreSave.class, hasPreSaveMap, pojo);
+	public static GDSResult<?> onPreSave(GDS gds, Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		return callAnnotatedMethod(gds, PreSave.class, hasPreSaveMap, pojo);
 	}
 	
-	public static void onPostSave(GDS gds, Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		callAnnotatedMethod(gds, PostSave.class, hasPostSaveMap, pojo);
+	public static GDSResult<?> onPostSave(GDS gds, Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		return callAnnotatedMethod(gds, PostSave.class, hasPostSaveMap, pojo);
 	}
 	
-	public static void onPreDelete(GDS gds, Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		callAnnotatedMethod(gds, PreDelete.class, hasPreDeleteMap, pojo);
+	public static GDSResult<?> onPreDelete(GDS gds, Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		return callAnnotatedMethod(gds, PreDelete.class, hasPreDeleteMap, pojo);
 	}
 
 }
