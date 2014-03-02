@@ -128,8 +128,9 @@ public class GDSImpl implements GDS {
 	}
 	
 	public static synchronized void clearReflectionCache() {
-		GDSField.reflectionCache.clear();
-		GDSClass.hasIdFieldMap.clear();
+		GDSClass.clearReflection();
+		GDSField.clearReflection();
+		ESMapCreator.clearReflection();
 	}
 
 	public static synchronized void shutdownAllNodes() {

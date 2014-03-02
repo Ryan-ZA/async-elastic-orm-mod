@@ -258,10 +258,10 @@ public class GDSLoaderImpl implements GDSLoader {
 					Map<Key, Entity> resultMap = Collections.synchronizedMap(new HashMap<Key, Entity>());
 					for (MultiGetItemResponse itemResponse : response.getResponses()) {
 						if (itemResponse.isFailed()) {
-							System.out.println("Failed to fetch : " + itemResponse.getFailure());
+							System.out.println("Failed to fetch : " + itemResponse.getType() + " :: " + itemResponse.getId());
 						} else {
-							Entity entity = new Entity(itemResponse.getType(), itemResponse.getResponse().getId(), itemResponse.getResponse().getSourceAsMap());
-							resultMap.put(new Key(itemResponse.getType(), itemResponse.getId()), entity);
+							Entity entity = new Entity(itemResponse.getResponse().getType(), itemResponse.getResponse().getId(), itemResponse.getResponse().getSourceAsMap());
+							resultMap.put(new Key(itemResponse.getResponse().getType(), itemResponse.getResponse().getId()), entity);
 						}
 					}
 					result.onSuccess(resultMap, null);
@@ -363,7 +363,7 @@ public class GDSLoaderImpl implements GDSLoader {
 			ExecutionException {
 		
 		final List<GDSResult<?>> results = new ArrayList<>();
-		if (entity.getDBDbObject() == null) {
+		if (entity.getDBDbObject() == null || entity.getProperty(GDSClass.GDS_CLASS_FIELD) == null) {
 			return new GDSResult<Object>() {
 				
 				@Override
@@ -381,8 +381,7 @@ public class GDSLoaderImpl implements GDSLoader {
 		String kind = (String) entity.getProperty(GDSClass.GDS_CLASS_FIELD);
 
 		Class<?> clazz = Class.forName(kind.replace("_", ".").replace("##", "_"));
-		GDSClass.makeConstructorsPublic(clazz);
-		final Object pojo = clazz.newInstance();
+		final Object pojo = GDSClass.construct(clazz);
 		Map<String, GDSField> map = GDSField.createMapFromObject(pojo);
 
 		for (final GDSField gdsField : map.values()) {

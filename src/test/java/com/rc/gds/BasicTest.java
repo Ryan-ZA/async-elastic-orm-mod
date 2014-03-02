@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import com.rc.gds.TestSubClass.TheSubClass;
 import com.rc.gds.interfaces.GDSBatcher;
+import com.rc.gds.interfaces.GDSManual;
 import com.rc.gds.interfaces.GDSResult;
 import com.rc.gds.interfaces.Key;
 
@@ -606,6 +607,24 @@ public class BasicTest {
 			getGDS().save(postSave).now();
 			assertNotNull(TestPostSave.staticTestChild.id);
 		}
+	}
+	
+	@Test
+	public void testGDSManual() {
+		TestChild testChild = new TestChild();
+		getGDS().save(testChild).now();
+		
+		TestManual testManual = new TestManual();
+		testManual.manualChild = new GDSManual(testChild);
+		getGDS().save(testManual).now();
+		
+		TestManual fetchManual = getGDS().load(TestManual.class, testManual.id).now();
+		assertNotNull(fetchManual);
+		assertNotNull(fetchManual.manualChild);
+
+		TestChild testChild2 = (TestChild) fetchManual.manualChild.get(getGDS()).now();
+		
+		assertEquals(testChild.id, testChild2.id);
 	}
 
 }

@@ -150,4 +150,9 @@ class ESMapCreator {
 		}
 	}
 	
+	public static void clearReflection() {
+		createdIndexes.clear();
+		createdKinds.clear();
+	}
+	
 }

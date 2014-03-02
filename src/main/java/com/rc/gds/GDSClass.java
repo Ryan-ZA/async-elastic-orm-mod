@@ -15,6 +15,7 @@ import com.rc.gds.annotation.PostSave;
 import com.rc.gds.annotation.PreDelete;
 import com.rc.gds.annotation.PreSave;
 import com.rc.gds.interfaces.GDS;
+import com.rc.gds.interfaces.GDSBatcher;
 import com.rc.gds.interfaces.GDSResult;
 
 public class GDSClass {
@@ -34,11 +35,11 @@ public class GDSClass {
 	public static final String GDS_MAP_FIELD = "__GDS_MAP_FIELD";
 
 	static final Map<Class<?>, Boolean> hasIdFieldMap = new ConcurrentHashMap<Class<?>, Boolean>();
-	static final Map<Class<?>, Method> hasPreSaveMap = new ConcurrentHashMap<Class<?>, Method>();
-	static final Map<Class<?>, Method> hasPostSaveMap = new ConcurrentHashMap<Class<?>, Method>();
-	static final Map<Class<?>, Method> hasPreDeleteMap = new ConcurrentHashMap<Class<?>, Method>();
+	static final Map<Class<?>, List<Method>> hasPreSaveMap = new ConcurrentHashMap<>();
+	static final Map<Class<?>, List<Method>> hasPostSaveMap = new ConcurrentHashMap<>();
+	static final Map<Class<?>, List<Method>> hasPreDeleteMap = new ConcurrentHashMap<>();
 	
-	static final Method nullMethod = GDSClass.class.getDeclaredMethods()[0];
+	static final Map<Class<?>, Constructor<?>> constructorMap = new ConcurrentHashMap<Class<?>, Constructor<?>>();
 
 	public static List<String> getKinds(Class<?> clazz) {
 		ArrayList<String> list = new ArrayList<String>();
@@ -62,12 +63,12 @@ public class GDSClass {
 	}
 
 	public static Class<?> getBaseClass(Class<?> clazz) {
-		ArrayList<Class<?>> list = new ArrayList<Class<?>>();
+		Class<?> lastclazz = clazz;
 		while (clazz != null && clazz != Object.class) {
-			list.add(clazz);
+			lastclazz = clazz;
 			clazz = clazz.getSuperclass();
 		}
-		return list.get(list.size() - 1);
+		return lastclazz;
 	}
 
 	/**
@@ -103,39 +104,66 @@ public class GDSClass {
 		hasIdFieldMap.put(originalClazz, false);
 		return false;
 	}
-
-	public static void makeConstructorsPublic(Class<?> clazz) {
-		Constructor<?>[] cons = clazz.getDeclaredConstructors();
+	
+	public static Object construct(Class<?> clazz) {
 		try {
-			AccessibleObject.setAccessible(cons, true);
-		} catch (Exception ex) {
-			//System.out.println("Error trying to makeConstructorsPublic for class: " + clazz + " " + ex.toString());
+			Constructor<?> constructor = constructorMap.get(clazz);
+			if (constructor == null) {
+				constructor = clazz.getDeclaredConstructor();
+				constructor.setAccessible(true);
+				constructorMap.put(clazz, constructor);
+			}
+			return constructor.newInstance();
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			throw new RuntimeException(e);
 		}
 	}
 	
-	private static GDSResult<?> callAnnotatedMethod(GDS gds, Class<? extends Annotation> annotation, Map<Class<?>, Method> annotationMap, Object pojo)
+	private static GDSResult<?> callAnnotatedMethod(GDS gds, Class<? extends Annotation> annotation, Map<Class<?>, List<Method>> annotationMap, Object pojo)
 			throws IllegalAccessException,
 			IllegalArgumentException, InvocationTargetException {
-		Method callMethod = annotationMap.get(pojo.getClass());
 		
-		if (callMethod == null) {
-			for (Method method : pojo.getClass().getDeclaredMethods()) {
-				if (method.getAnnotation(annotation) != null) {
-					callMethod = method;
-					callMethod.setAccessible(true);
-					break;
+		Class<?> clazz = pojo.getClass();
+		List<Method> callMethods = annotationMap.get(pojo.getClass());
+		if (callMethods == null) {
+			callMethods = new ArrayList<>();
+			while (clazz != null && clazz != Object.class) {
+				for (Method method : pojo.getClass().getDeclaredMethods()) {
+					if (method.getAnnotation(annotation) != null) {
+						method.setAccessible(true);
+						callMethods.add(method);
+						break;
+					}
 				}
+				clazz = clazz.getSuperclass();
 			}
 			
-			if (callMethod == null)
-				callMethod = nullMethod;
-			
-			annotationMap.put(pojo.getClass(), callMethod);
+			annotationMap.put(clazz, callMethods);
 		}
 		
-		if (callMethod == nullMethod)
+		if (callMethods.isEmpty())
 			return null;
 		
+		if (callMethods.size() == 1)
+			return invokeMethod(callMethods.get(0), pojo, gds);
+		
+		List<GDSResult<?>> results = new ArrayList<>();
+		for (Method callMethod : callMethods) {
+			GDSResult<?> result = invokeMethod(callMethod, pojo, gds);
+			if (result != null)
+				results.add(result);
+		}
+		
+		if (results.isEmpty())
+			return null;
+		
+		if (results.size() == 1)
+			return results.get(0);
+		
+		return new GDSBatcher(results).onAllComplete();
+	}
+	
+	private static GDSResult<?> invokeMethod(Method callMethod, Object pojo, GDS gds) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		if (callMethod.getParameterTypes().length == 0)
 			return (GDSResult<?>) callMethod.invoke(pojo);
 		else
@@ -152,6 +180,14 @@ public class GDSClass {
 	
 	public static GDSResult<?> onPreDelete(GDS gds, Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		return callAnnotatedMethod(gds, PreDelete.class, hasPreDeleteMap, pojo);
+	}
+
+	public static void clearReflection() {
+		hasIdFieldMap.clear();
+		hasPreSaveMap.clear();
+		hasPostSaveMap.clear();
+		hasPreDeleteMap.clear();
+		constructorMap.clear();
 	}
 
 }

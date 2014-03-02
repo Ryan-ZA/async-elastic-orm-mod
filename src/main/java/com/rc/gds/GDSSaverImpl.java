@@ -13,8 +13,6 @@ import java.util.UUID;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.update.UpdateRequestBuilder;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 
 import com.rc.gds.annotation.AlwaysPersist;
@@ -383,16 +381,16 @@ public class GDSSaverImpl implements GDSSaver {
 		try {
 			// Save to datastore
 			if (entity.id != null && isUpdate) {
-				UpdateRequestBuilder builder = gds.getClient().prepareUpdate(gds.indexFor(entity.getKind()), entity.getKind(), entity.id);
-				builder.setDoc(entity.getDBDbObject());
+				IndexRequestBuilder builder = gds.getClient().prepareIndex(gds.indexFor(entity.getKind()), entity.getKind(), entity.id);
+				builder.setSource(entity.getDBDbObject());
 				Long ver = entity.getVersion();
 				if (ver != null)
 					builder.setVersion(ver);
 				
-				builder.execute(new ActionListener<UpdateResponse>() {
+				builder.execute(new ActionListener<IndexResponse>() {
 					
 					@Override
-					public void onResponse(UpdateResponse response) {
+					public void onResponse(IndexResponse response) {
 						Key key = new Key(entity.getKind(), response.getId(), response.getVersion());
 						result.onSuccess(key, null);
 					}

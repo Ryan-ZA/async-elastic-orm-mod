@@ -243,4 +243,8 @@ public class GDSField {
 	boolean isAnalyzed;
 	String es_mapping;
 
+	public static void clearReflection() {
+		reflectionCache.clear();
+	}
+
 }
