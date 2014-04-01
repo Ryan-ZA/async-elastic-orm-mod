@@ -15,18 +15,18 @@ import org.elasticsearch.search.sort.SortBuilder;
 import com.rc.gds.interfaces.GDSQuery;
 
 public class GDSQueryImpl<T> implements GDSQuery<T> {
-
+	
 	GDSImpl gds;
 	Class<T> clazz;
 	BoolQueryBuilder boolquery;
 	FilterBuilder filter;
-
+	
 	SortBuilder sort;
 	String collectionName;
-
+	
 	int skip = 0;
 	int size = 1000;
-
+	
 	protected GDSQueryImpl(GDSImpl gds, Class<T> clazz) {
 		this.gds = gds;
 		this.clazz = clazz;
@@ -45,7 +45,7 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 	public GDSQuery<T> filter(QueryBuilder query) {
 		if (boolquery == null)
 			boolquery = QueryBuilders.boolQuery();
-
+		
 		boolquery.must(query);
 		return this;
 	}
@@ -134,7 +134,7 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		requestBuilder.setSize(10000);
 		
 		final GDSAsyncImpl<SearchResponse> sr = new GDSAsyncImpl<>();
-
+		
 		requestBuilder.execute(new ActionListener<SearchResponse>() {
 			
 			@Override
@@ -181,5 +181,5 @@ public class GDSQueryImpl<T> implements GDSQuery<T> {
 		skip = i;
 		return this;
 	}
-
+	
 }

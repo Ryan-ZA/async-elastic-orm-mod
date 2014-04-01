@@ -1,6 +1,5 @@
 package com.rc.gds.interfaces;
 
-
 public interface GDSSaver {
 	
 	/**
@@ -14,7 +13,7 @@ public interface GDSSaver {
 	 * @return
 	 */
 	public abstract GDSSaver forceRecursiveUpdate(boolean recursiveUpdate);
-
+	
 	public abstract GDSResult<Key> result(Object pojo);
 	
 }

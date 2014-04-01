@@ -5,7 +5,7 @@ import com.rc.gds.annotation.ID;
 
 @AlwaysPersist
 public class TestChild {
-
+	
 	@ID
 	String id;
 	
@@ -29,5 +29,5 @@ public class TestChild {
 	public String toString() {
 		return name;
 	}
-
+	
 }

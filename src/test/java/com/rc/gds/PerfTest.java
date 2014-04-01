@@ -99,7 +99,7 @@ public class PerfTest {
 	@Test
 	public void testSaveGDSAsync() {
 		long time = System.currentTimeMillis();
-
+		
 		// Can only do max 200 at a time because of 200 unit index queue default in ES
 		for (int j = 0; j < 100; j++) {
 			List<GDSResult<Key>> results = new ArrayList<>();
@@ -114,7 +114,7 @@ public class PerfTest {
 			if (j % 10 == 0)
 				System.out.println("Done " + j * 100);
 		}
-
+		
 		System.out.println("testSaveGDSAsync ellapsed: " + (System.currentTimeMillis() - time));
 	}
 	
@@ -185,5 +185,5 @@ public class PerfTest {
 		System.out.println("testLoadRaw ellapsed: " + (System.currentTimeMillis() - time));
 		
 	}
-
+	
 }

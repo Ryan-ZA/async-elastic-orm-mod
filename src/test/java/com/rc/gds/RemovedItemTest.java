@@ -13,16 +13,16 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class RemovedItemTest {
-
+	
 	private static GDSImpl getGDS() {
 		return new GDSImpl(false, "gdstest");
 	}
-
+	
 	@Before
 	public void testSetup() {
 		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
 	}
-
+	
 	@After
 	public void testCleanup() {
 		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
@@ -31,7 +31,7 @@ public class RemovedItemTest {
 	private void refreshIndex() {
 		getGDS().getClient().admin().indices().prepareRefresh().execute().actionGet();
 	}
-
+	
 	@Test
 	public void testSimpleRemove() {
 		TestParent testParent = new TestParent();
@@ -79,7 +79,7 @@ public class RemovedItemTest {
 		assertEquals(99, fetchParent.testChildList.size());
 		
 		assertNull(fetchParent.testChildArr[15]);
-
+		
 		for (int i = 0; i < 99; i++) {
 			assertNotNull(fetchParent.testChildList.get(i).name);
 		}

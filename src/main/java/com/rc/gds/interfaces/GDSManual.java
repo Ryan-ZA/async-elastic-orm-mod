@@ -12,7 +12,7 @@ public class GDSManual {
 	
 	GDSManual() {
 	}
-
+	
 	@GwtIncompatible("Cannot be run from GWT")
 	public GDSManual(Class<?> clazz, String id) {
 		inner_id = id;

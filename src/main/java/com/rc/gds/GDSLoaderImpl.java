@@ -27,11 +27,11 @@ import com.rc.gds.interfaces.GDSResult;
 import com.rc.gds.interfaces.Key;
 
 public class GDSLoaderImpl implements GDSLoader {
-
+	
 	GDSImpl gds;
 	private Map<Key, Object> localCache = Collections.synchronizedMap(new HashMap<Key, Object>());
 	int retryCount = 0;
-
+	
 	protected GDSLoaderImpl(GDSImpl gds) {
 		this.gds = gds;
 	}
@@ -45,53 +45,48 @@ public class GDSLoaderImpl implements GDSLoader {
 	public <T> GDSResult<T> fetch(final Class<T> clazz, final String id) {
 		try {
 			final GDSAsyncImpl<T> callback = new GDSAsyncImpl<>();
-
+			
 			final String kind = GDSClass.getKind(clazz);
 			final Key key = new Key(kind, id);
-
+			
 			if (localCache.containsKey(key)) {
 				callback.onSuccess((T) localCache.get(key), null);
 				return callback;
 			}
 			
 			gds.getClient().prepareGet(gds.indexFor(key.kind), key.kind, key.id)
-					.execute(new ActionListener<GetResponse>() {
-						
-						@Override
-						public void onResponse(GetResponse response) {
-							if (!response.isExists()) {
-								callback.onSuccess(null, null);
-								return;
-							}
-							Entity entity = new Entity(kind, response.getId(), response.getSourceAsMap());
-							
-							final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
+			.execute(new ActionListener<GetResponse>() {
+				
+				@Override
+				public void onResponse(GetResponse response) {
+					if (!response.isExists()) {
+						callback.onSuccess(null, null);
+						return;
+					}
+					Entity entity = new Entity(kind, response.getId(), response.getSourceAsMap());
+					
+					final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
+					try {
+						entityToPOJO(entity, entity.getKey().getId(), linksToFetch).later((pojo, err) -> {
 							try {
-								entityToPOJO(entity, entity.getKey().getId(), linksToFetch).later(new GDSCallback<Object>() {
-									
-									@Override
-									public void onSuccess(final Object pojo, Throwable err) {
-										try {
-											if (err != null)
-												throw err;
-											localCache.put(key, pojo);
-											fetchLinkArray(callback, linksToFetch, pojo);
-										} catch (Throwable e) {
-											callback.onSuccess(null, e);
-										}
-									}
-
-								});
+								if (err != null)
+									throw err;
+								localCache.put(key, pojo);
+								fetchLinkArray(callback, linksToFetch, pojo);
 							} catch (Throwable e) {
 								callback.onSuccess(null, e);
 							}
-						}
-						
-						@Override
-						public void onFailure(Throwable e) {
-							callback.onSuccess(null, e);
-						}
-					});
+						});
+					} catch (Throwable e) {
+						callback.onSuccess(null, e);
+					}
+				}
+				
+				@Override
+				public void onFailure(Throwable e) {
+					callback.onSuccess(null, e);
+				}
+			});
 			
 			return callback;
 		} catch (RuntimeException ex) {
@@ -106,16 +101,10 @@ public class GDSLoaderImpl implements GDSLoader {
 		if (linksToFetch.isEmpty()) {
 			callback.onSuccess((T) pojo, null);
 		} else {
-			fetchLinks(linksToFetch).later(new GDSCallback<List<GDSLink>>() {
-				
-				@Override
-				public void onSuccess(List<GDSLink> t, Throwable err) {
-					callback.onSuccess((T) pojo, err);
-				}
-			});
+			fetchLinks(linksToFetch).later((t, err) -> callback.onSuccess((T) pojo, err));
 		}
 	}
-
+	
 	/*
 	 * (non-Javadoc)
 	 * @see com.rc.gds.GDSLoader#fetch(com.rc.gds.Key, com.rc.gds.interfaces.GDSCallback)
@@ -128,48 +117,44 @@ public class GDSLoaderImpl implements GDSLoader {
 		final GDSAsyncImpl<Object> result = new GDSAsyncImpl<>();
 		
 		gds.getClient().prepareGet(gds.indexFor(key.kind), key.kind, key.id)
-				.execute(new ActionListener<GetResponse>() {
-					
-					@Override
-					public void onResponse(GetResponse getResponse) {
+		.execute(new ActionListener<GetResponse>() {
+			
+			@Override
+			public void onResponse(GetResponse getResponse) {
+				try {
+					Entity entity = new Entity(key.kind, getResponse.getId(), getResponse.getSourceAsMap());
+					final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
+					entityToPOJO(entity, entity.getKey().getId(), linksToFetch).later((pojo, err) -> {
 						try {
-							Entity entity = new Entity(key.kind, getResponse.getId(), getResponse.getSourceAsMap());
-							final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
-							entityToPOJO(entity, entity.getKey().getId(), linksToFetch).later(new GDSCallback<Object>() {
-								
-								@Override
-								public void onSuccess(final Object pojo, Throwable err) {
-									try {
-										if (err != null)
-											throw err;
-										localCache.put(key, pojo);
-										fetchLinkArray(result, linksToFetch, pojo);
-									} catch (Throwable e) {
-										result.onSuccess(null, e);
-									}
-								}
-							});
-						} catch (Exception e) {
+							if (err != null)
+								throw err;
+							localCache.put(key, pojo);
+							fetchLinkArray(result, linksToFetch, pojo);
+						} catch (Throwable e) {
 							result.onSuccess(null, e);
 						}
+					});
+				} catch (Exception e) {
+					result.onSuccess(null, e);
+				}
+			}
+			
+			@Override
+			public void onFailure(Throwable e) {
+				retryCount++;
+				if (e instanceof EsRejectedExecutionException && retryCount < 50) {
+					try {
+						System.out.println("Retrying...");
+						Thread.sleep(50);
+						gds.getClient().prepareGet(gds.indexFor(key.kind), key.kind, key.id).execute(this);
+					} catch (InterruptedException e1) {
+						throw new RuntimeException(e1);
 					}
-					
-					@Override
-					public void onFailure(Throwable e) {
-						retryCount++;
-						if (e instanceof EsRejectedExecutionException && retryCount < 50) {
-							try {
-								System.out.println("Retrying...");
-								Thread.sleep(50);
-								gds.getClient().prepareGet(gds.indexFor(key.kind), key.kind, key.id).execute(this);
-							} catch (InterruptedException e1) {
-								throw new RuntimeException(e1);
-							}
-						} else {
-							result.onSuccess(null, e);
-						}
-					}
-				});
+				} else {
+					result.onSuccess(null, e);
+				}
+			}
+		});
 		
 		return result;
 	}
@@ -180,7 +165,7 @@ public class GDSLoaderImpl implements GDSLoader {
 	 */
 	@Override
 	public GDSResult<Map<Key, Object>> fetchBatch(final Iterable<Key> keys) throws InterruptedException, ExecutionException, ClassNotFoundException,
-			InstantiationException, IllegalAccessException {
+	InstantiationException, IllegalAccessException {
 		final Map<Key, Object> fetched = Collections.synchronizedMap(new HashMap<Key, Object>());
 		final Set<Key> stillToFetch = Collections.synchronizedSet(new HashSet<Key>());
 		
@@ -198,54 +183,46 @@ public class GDSLoaderImpl implements GDSLoader {
 		
 		final List<GDSLink> linksToFetch = Collections.synchronizedList(new ArrayList<GDSLink>());
 		final GDSAsyncImpl<Map<Key, Object>> realResult = new GDSAsyncImpl<>();
-		bulkFetchList(stillToFetch).later(new GDSCallback<Map<Key, Entity>>() {
-			
-			@Override
-			public void onSuccess(Map<Key, Entity> dsMap, Throwable err) {
-				try {
-					if (err != null)
-						throw err;
-					final Map<Key, GDSResult<?>> objResults = new HashMap<>();
-					for (final Entry<Key, Entity> entry : dsMap.entrySet()) {
-						Entity entity = entry.getValue();
-						final Key key = entry.getKey();
-						
-						objResults.put(key, entityToPOJO(entity, key.getId(), linksToFetch));
-					}
-					new GDSBatcher(objResults.values()).onAllComplete().later(new GDSCallback<Boolean>() {
-						
-						@Override
-						public void onSuccess(Boolean t, Throwable err) {
-							if (err != null)
-								realResult.onSuccess(null, err);
-							
-							try {
-								final Map<Key, Object> objectMap = new HashMap<>();
-								objectMap.putAll(fetched);
-								for (Entry<Key, GDSResult<?>> entry : objResults.entrySet()) {
-									objectMap.put(entry.getKey(), entry.getValue().now());
-								}
-								localCache.putAll(objectMap);
-								fetchLinkArray(realResult, linksToFetch, objectMap);
-							} catch (Exception e) {
-								realResult.onSuccess(null, e);
-							}
-						}
-					});
-				} catch (Throwable e) {
-					realResult.onSuccess(null, e);
+		bulkFetchList(stillToFetch).later((dsMap, err1) -> {
+			try {
+				if (err1 != null)
+					throw err1;
+				final Map<Key, GDSResult<?>> objResults = new HashMap<>();
+				for (final Entry<Key, Entity> entry : dsMap.entrySet()) {
+					Entity entity = entry.getValue();
+					final Key key = entry.getKey();
+					
+					objResults.put(key, entityToPOJO(entity, key.getId(), linksToFetch));
 				}
+				new GDSBatcher(objResults.values()).onAllComplete().later((t, err2) -> {
+					if (err2 != null)
+						realResult.onSuccess(null, err2);
+					
+					try {
+						final Map<Key, Object> objectMap = new HashMap<>();
+						objectMap.putAll(fetched);
+						for (Entry<Key, GDSResult<?>> entry : objResults.entrySet()) {
+							objectMap.put(entry.getKey(), entry.getValue().now());
+						}
+						localCache.putAll(objectMap);
+						fetchLinkArray(realResult, linksToFetch, objectMap);
+					} catch (Exception e) {
+						realResult.onSuccess(null, e);
+					}
+				});
+			} catch (Throwable e) {
+				realResult.onSuccess(null, e);
 			}
 		});
 		return realResult;
 	}
-
+	
 	private GDSResult<Map<Key, Entity>> bulkFetchList(Set<Key> stillToFetch) {
 		
 		final GDSAsyncImpl<Map<Key, Entity>> result = new GDSAsyncImpl<>();
-
+		
 		MultiGetRequestBuilder requestBuilder = gds.getClient().prepareMultiGet();
-
+		
 		for (Key key : stillToFetch) {
 			requestBuilder.add(gds.indexFor(key.kind), key.kind, key.id);
 		}
@@ -281,7 +258,7 @@ public class GDSLoaderImpl implements GDSLoader {
 	
 	public GDSResult<List<GDSLink>> fetchLinks(final List<GDSLink> linksToFetch) throws Exception {
 		Set<Key> stillToFetch = Collections.synchronizedSet(new HashSet<Key>());
-
+		
 		for (GDSLink link : linksToFetch) {
 			if (link.keyCollection != null)
 				stillToFetch.addAll(link.keyCollection);
@@ -294,55 +271,51 @@ public class GDSLoaderImpl implements GDSLoader {
 		}
 		
 		final GDSAsyncImpl<List<GDSLink>> result = new GDSAsyncImpl<>();
-
-		fetchBatch(stillToFetch).later(new GDSCallback<Map<Key, Object>>() {
-			
-			@Override
-			public void onSuccess(Map<Key, Object> fetched, Throwable err) {
-				try {
-					if (err != null)
-						throw err;
-
-					for (GDSLink link : linksToFetch) {
-						if (link.key != null) {
-							Object newPojo = fetched.get(link.key);
-							if (newPojo == null)
-								continue;
-							
-							if (link.collection != null) {
-								link.collection.add(newPojo);
-							} else if (link.gdsField != null && link.pojo != null) {
-								link.gdsField.field.set(link.pojo, newPojo);
-							} else {
-								throw new RuntimeException("Undefined behaviour");
-							}
-						}
-						if (link.keyCollection != null) {
-							if (link.collection != null) {
-								for (Key key : link.keyCollection) {
-									link.collection.add(fetched.get(key));
-								}
-							} else if (link.gdsField != null && link.gdsField.isArray) {
-								Class<?> fieldType = link.gdsField.field.getType().getComponentType();
-								Object newArray = Array.newInstance(fieldType, link.keyCollection.size());
-								int counter = 0;
-								for (Key key : link.keyCollection) {
-									Object childPOJO = fetched.get(key);
-									setArrayIndex(counter, fieldType, newArray, childPOJO);
-									counter++;
-								}
-							} else {
-								throw new RuntimeException("Undefined behaviour");
-							}
+		
+		fetchBatch(stillToFetch).later((fetched, err) -> {
+			try {
+				if (err != null)
+					throw err;
+				
+				for (GDSLink link : linksToFetch) {
+					if (link.key != null) {
+						Object newPojo = fetched.get(link.key);
+						if (newPojo == null)
+							continue;
+						
+						if (link.collection != null) {
+							link.collection.add(newPojo);
+						} else if (link.gdsField != null && link.pojo != null) {
+							link.gdsField.field.set(link.pojo, newPojo);
+						} else {
+							throw new RuntimeException("Undefined behaviour");
 						}
 					}
-					result.onSuccess(linksToFetch, err);
-				} catch (Throwable e) {
-					result.onSuccess(linksToFetch, e);
+					if (link.keyCollection != null) {
+						if (link.collection != null) {
+							for (Key key : link.keyCollection) {
+								link.collection.add(fetched.get(key));
+							}
+						} else if (link.gdsField != null && link.gdsField.isArray) {
+							Class<?> fieldType = link.gdsField.field.getType().getComponentType();
+							Object newArray = Array.newInstance(fieldType, link.keyCollection.size());
+							int counter = 0;
+							for (Key key : link.keyCollection) {
+								Object childPOJO = fetched.get(key);
+								setArrayIndex(counter, fieldType, newArray, childPOJO);
+								counter++;
+							}
+						} else {
+							throw new RuntimeException("Undefined behaviour");
+						}
+					}
 				}
+				result.onSuccess(linksToFetch, err);
+			} catch (Throwable e) {
+				result.onSuccess(linksToFetch, e);
 			}
 		});
-
+		
 		return result;
 	}
 	
@@ -357,10 +330,10 @@ public class GDSLoaderImpl implements GDSLoader {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public GDSResult<Object> entityToPOJO(PropertyContainer entity, String id, final List<GDSLink> linksToFetch) throws ClassNotFoundException,
-			InstantiationException,
-			IllegalAccessException,
-			InterruptedException,
-			ExecutionException {
+	InstantiationException,
+	IllegalAccessException,
+	InterruptedException,
+	ExecutionException {
 		
 		final List<GDSResult<?>> results = new ArrayList<>();
 		if (entity.getDBDbObject() == null || entity.getProperty(GDSClass.GDS_CLASS_FIELD) == null) {
@@ -379,34 +352,34 @@ public class GDSLoaderImpl implements GDSLoader {
 			};
 		}
 		String kind = (String) entity.getProperty(GDSClass.GDS_CLASS_FIELD);
-
+		
 		Class<?> clazz = Class.forName(kind.replace("_", ".").replace("##", "_"));
 		final Object pojo = GDSClass.construct(clazz);
 		Map<String, GDSField> map = GDSField.createMapFromObject(pojo);
-
+		
 		for (final GDSField gdsField : map.values()) {
 			if (gdsField.fieldName.equals(GDSField.GDS_ID_FIELD)) {
 				// ID field is part of the key of the entity
 				gdsField.field.set(pojo, id);
 				continue;
 			}
-
+			
 			if (entity.getProperty(gdsField.fieldName) == null) {
 				// No value for this field was saved, leave it blank
 				continue;
 			}
-
+			
 			Class<?> fieldType = gdsField.field.getType();
-
+			
 			if (fieldType.isArray()) {
 				fieldType = fieldType.getComponentType();
 				// Field is an array - we need to take the list from GAE,
 				// get the number of elements, create an array of that size,
 				// then set each element to the correct value
-
+				
 				List<Object> dsCollection = (List<Object>) entity.getProperty(gdsField.fieldName);
 				final Object newArray = Array.newInstance(fieldType, dsCollection.size());
-
+				
 				if (gdsField.nonDatastoreObject) {
 					if (gdsField.embedded) {
 						// In this case, all stored objects will be
@@ -434,12 +407,12 @@ public class GDSLoaderImpl implements GDSLoader {
 				// collection we get from GAE and convert it into the field's
 				// subclass of collection
 				final Collection<Object> newCollection = (Collection<Object>) GDSBoxer.createBestFitCollection(fieldType);
-
+				
 				if (gdsField.nonDatastoreObject) {
 					results.add(fillCollectionAsync(entity, linksToFetch, gdsField, newCollection));
 				} else {
 					Collection<Object> dsCollection = (Collection<Object>) entity.getProperty(gdsField.fieldName);
-
+					
 					for (Object object : dsCollection) {
 						newCollection.add(object);
 					}
@@ -461,16 +434,12 @@ public class GDSLoaderImpl implements GDSLoader {
 					embeddedEntity.dbObject = dbObject;
 					
 					GDSResult<Object> result = entityToPOJO(embeddedEntity, null, linksToFetch);
-					result.later(new GDSCallback<Object>() {
-						
-						@Override
-						public void onSuccess(Object embeddedPOJO, Throwable err) {
-							synchronized (pojo) {
-								try {
-									setField(gdsField.field, pojo, embeddedPOJO);
-								} catch (Exception e) {
-									throw new RuntimeException(e);
-								}
+					result.later((embeddedPOJO, err) -> {
+						synchronized (pojo) {
+							try {
+								setField(gdsField.field, pojo, embeddedPOJO);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
 							}
 						}
 					});
@@ -490,25 +459,19 @@ public class GDSLoaderImpl implements GDSLoader {
 				setField(gdsField.field, pojo, fieldPOJO);
 			}
 		}
-
+		
 		final GDSAsyncImpl<Object> realResult = new GDSAsyncImpl<Object>();
-		new GDSBatcher(results).onAllComplete().later(new GDSCallback<Boolean>() {
-			
-			@Override
-			public void onSuccess(Boolean t, Throwable err) {
-				realResult.onSuccess(pojo, err);
-			}
-		});
+		new GDSBatcher(results).onAllComplete().later((t, err) -> realResult.onSuccess(pojo, err));
 		return realResult;
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	private GDSResult<Boolean> fillMapAsync(PropertyContainer entity, final List<GDSLink> linksToFetch, final GDSField gdsField, final Map<Object, Object> newMap)
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException, ExecutionException {
-
+		
 		EmbeddedEntity embeddedEntity = new EmbeddedEntity();
 		embeddedEntity.dbObject = (Map<String, Object>) entity.getProperty(gdsField.fieldName);
-
+		
 		final List<GDSResult<?>> allResults = new ArrayList<>();
 		final List<GDSResult<?>> keyResults = new ArrayList<>();
 		final List<GDSResult<?>> valResults = new ArrayList<>();
@@ -532,20 +495,16 @@ public class GDSLoaderImpl implements GDSLoader {
 		}
 		
 		GDSResult<Boolean> onComplete = new GDSBatcher(allResults).onAllComplete();
-		onComplete.later(new GDSCallback<Boolean>() {
-			
-			@Override
-			public void onSuccess(Boolean t, Throwable err) {
-				for (int i = 0; i < keyResults.size(); i++) {
-					Object key = keyResults.get(i).now();
-					Object val = valResults.get(i).now();
-					if (key != null && val != null)
-						newMap.put(key, val);
-				}
+		onComplete.later((t, err) -> {
+			for (int i = 0; i < keyResults.size(); i++) {
+				Object key = keyResults.get(i).now();
+				Object val = valResults.get(i).now();
+				if (key != null && val != null)
+					newMap.put(key, val);
 			}
 		});
 		return onComplete;
-
+		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -554,7 +513,7 @@ public class GDSLoaderImpl implements GDSLoader {
 		
 		Collection<Object> dsCollection = (Collection<Object>) entity.getProperty(gdsField.fieldName);
 		final List<GDSResult<?>> results = new ArrayList<>();
-
+		
 		for (final Object obj : dsCollection) {
 			if (obj instanceof Key) {
 				Key key = (Key) obj;
@@ -565,15 +524,11 @@ public class GDSLoaderImpl implements GDSLoader {
 		}
 		
 		GDSResult<Boolean> onComplete = new GDSBatcher(results).onAllComplete();
-		onComplete.later(new GDSCallback<Boolean>() {
-			
-			@Override
-			public void onSuccess(Boolean t, Throwable err) {
-				for (GDSResult<?> r : results) {
-					Object o = r.now();
-					if (o != null)
-						newCollection.add(r.now());
-				}
+		onComplete.later((t, err) -> {
+			for (GDSResult<?> r : results) {
+				Object o = r.now();
+				if (o != null)
+					newCollection.add(r.now());
 			}
 		});
 		return onComplete;
@@ -582,23 +537,19 @@ public class GDSLoaderImpl implements GDSLoader {
 	@SuppressWarnings("unchecked")
 	private GDSResult<Boolean> fillArrayAsync(PropertyContainer entity, final List<GDSLink> linksToFetch, final GDSField gdsField, final Class<?> fieldType, final Object newArray)
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException, ExecutionException {
-
+		
 		Collection<HashMap<String, Object>> collection = (Collection<HashMap<String, Object>>) entity.getProperty(gdsField.fieldName);
 		final List<GDSResult<?>> results = new ArrayList<>();
-
+		
 		for (final HashMap<String, Object> embeddedEntity : collection) {
 			EmbeddedEntity tmp = new EmbeddedEntity();
 			tmp.dbObject = embeddedEntity;
 			results.add(entityToPOJO(tmp, null, linksToFetch));
 		}
 		GDSResult<Boolean> onComplete = new GDSBatcher(results).onAllComplete();
-		onComplete.later(new GDSCallback<Boolean>() {
-			
-			@Override
-			public void onSuccess(Boolean t, Throwable err) {
-				for (int i = 0; i < results.size(); i++) {
-					setArrayIndex(i, fieldType, newArray, results.get(i).now());
-				}
+		onComplete.later((t, err) -> {
+			for (int i = 0; i < results.size(); i++) {
+				setArrayIndex(i, fieldType, newArray, results.get(i).now());
 			}
 		});
 		return onComplete;
@@ -606,8 +557,8 @@ public class GDSLoaderImpl implements GDSLoader {
 	
 	@SuppressWarnings("unchecked")
 	private GDSResult<Object> mapValueToPOJO(Object obj, List<GDSLink> linksToFetch) throws ClassNotFoundException, InstantiationException,
-			IllegalAccessException, InterruptedException,
-			ExecutionException {
+	IllegalAccessException, InterruptedException,
+	ExecutionException {
 		
 		if (obj instanceof Map<?, ?>) {
 			Map<String, Object> map = (Map<String, Object>) obj;
@@ -623,7 +574,7 @@ public class GDSLoaderImpl implements GDSLoader {
 			return new GDSAsyncImpl<>(obj);
 		}
 	}
-
+	
 	/**
 	 * Nasty function to get around nasty java primitive arrays.
 	 * 
@@ -672,7 +623,7 @@ public class GDSLoaderImpl implements GDSLoader {
 			}
 		}
 	}
-
+	
 	/**
 	 * Nasty function to get around nasty java primitive fields.
 	 * 

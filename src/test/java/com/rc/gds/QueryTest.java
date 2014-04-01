@@ -16,7 +16,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class QueryTest {
-
+	
 	private static GDSImpl getGDS() {
 		return new GDSImpl(true, "gdstest");
 	}
@@ -34,7 +34,7 @@ public class QueryTest {
 	private void refreshIndex() {
 		getGDS().getClient().admin().indices().prepareRefresh().execute().actionGet();
 	}
-
+	
 	@Test
 	public void queryTest() {
 		int total = 0;
@@ -53,7 +53,7 @@ public class QueryTest {
 		}
 		
 		refreshIndex();
-
+		
 		List<TestParent> result = getGDS().query(TestParent.class).asList();
 		int newtotal = 0;
 		for (TestParent tp : result) {
@@ -86,7 +86,7 @@ public class QueryTest {
 		}
 		
 		refreshIndex();
-
+		
 		List<TestParent> result = getGDS().query(TestParent.class).asList();
 		int newtotal1 = 0;
 		int newtotal2 = 0;
@@ -129,7 +129,7 @@ public class QueryTest {
 		}
 		
 		refreshIndex();
-
+		
 		List<TestParent> result = getGDS().query(TestParent.class).asList();
 		int newtotal1 = 0;
 		int newtotal2 = 0;
@@ -170,7 +170,7 @@ public class QueryTest {
 		}
 		
 		refreshIndex();
-
+		
 		List<TestParent> result = getGDS().query(TestParent.class).asList();
 		
 		for (TestParent tp : result) {
@@ -220,7 +220,7 @@ public class QueryTest {
 		}
 		
 		refreshIndex();
-
+		
 		List<TestParent> result = getGDS().query(TestParent.class).asList();
 		
 		for (TestParent tp : result) {
@@ -424,7 +424,7 @@ public class QueryTest {
 		}
 		
 		refreshIndex();
-
+		
 		SearchResponse sr = getGDS().getClient().prepareSearch(getGDS().indexFor(GDSClass.getKind(TestParent.class)))
 				.addFacet(FacetBuilders.termsFacet("test1").field("name"))
 				.setQuery(QueryBuilders.matchAllQuery())
@@ -440,7 +440,7 @@ public class QueryTest {
 	@Test
 	public void testFacetChildren() {
 		TestChild testChild = new TestChild();
-
+		
 		for (int i = 0; i < 50; i++) {
 			TestParent testParent = new TestParent();
 			testParent.testChild = testChild;
@@ -448,7 +448,7 @@ public class QueryTest {
 		}
 		
 		refreshIndex();
-
+		
 		SearchResponse sr = getGDS().getClient().prepareSearch(getGDS().indexFor(GDSClass.getKind(TestParent.class)))
 				.addFacet(FacetBuilders.termsFacet("test1").scriptField("_source.testChild.id"))
 				.setQuery(QueryBuilders.matchAllQuery())
@@ -456,10 +456,10 @@ public class QueryTest {
 				.get();
 		
 		TermsFacet termsFacet = sr.getFacets().facet(TermsFacet.class, "test1");
-
+		
 		assertEquals(1, termsFacet.getEntries().size());
 		
 		assertEquals(0, sr.getHits().getHits().length);
 	}
-
+	
 }

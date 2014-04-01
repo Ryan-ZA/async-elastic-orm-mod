@@ -6,12 +6,12 @@ import com.rc.gds.interfaces.GDSManual;
 
 @AlwaysPersist
 public class TestManual {
-
+	
 	@ID
 	String id;
 	
 	String name;
 	
 	GDSManual manualChild;
-
+	
 }

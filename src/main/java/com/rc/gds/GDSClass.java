@@ -19,7 +19,7 @@ import com.rc.gds.interfaces.GDSBatcher;
 import com.rc.gds.interfaces.GDSResult;
 
 public class GDSClass {
-
+	
 	/**
 	 * Includes a list of all superclasses of the class, and the class itself. Used for filtering.
 	 */
@@ -28,19 +28,19 @@ public class GDSClass {
 	 * Java class name for the object. Used to reconstruct the java pojo.
 	 */
 	public static final String GDS_CLASS_FIELD = "__GDS_CLASS_FIELD";
-
+	
 	/**
 	 * If this field exists in an Entity, then the field is a Map. Maps are stored as K0=Key1,V0=Value1,K1=Key2,V1=Value2,...
 	 */
 	public static final String GDS_MAP_FIELD = "__GDS_MAP_FIELD";
-
+	
 	static final Map<Class<?>, Boolean> hasIdFieldMap = new ConcurrentHashMap<Class<?>, Boolean>();
 	static final Map<Class<?>, List<Method>> hasPreSaveMap = new ConcurrentHashMap<>();
 	static final Map<Class<?>, List<Method>> hasPostSaveMap = new ConcurrentHashMap<>();
 	static final Map<Class<?>, List<Method>> hasPreDeleteMap = new ConcurrentHashMap<>();
 	
 	static final Map<Class<?>, Constructor<?>> constructorMap = new ConcurrentHashMap<Class<?>, Constructor<?>>();
-
+	
 	public static List<String> getKinds(Class<?> clazz) {
 		ArrayList<String> list = new ArrayList<String>();
 		while (clazz != null && clazz != Object.class) {
@@ -57,11 +57,11 @@ public class GDSClass {
 	public static String getKind(Object o) {
 		return getKind(o.getClass());
 	}
-
+	
 	public static String fixName(String classname) {
 		return classname.replace("_", "##").replace(".", "_");
 	}
-
+	
 	public static Class<?> getBaseClass(Class<?> clazz) {
 		Class<?> lastclazz = clazz;
 		while (clazz != null && clazz != Object.class) {
@@ -70,7 +70,7 @@ public class GDSClass {
 		}
 		return lastclazz;
 	}
-
+	
 	/**
 	 * Checks if a class has a usable ID field.
 	 * 
@@ -81,9 +81,9 @@ public class GDSClass {
 		if (hasIdFieldMap.containsKey(clazz)) {
 			return hasIdFieldMap.get(clazz);
 		}
-
+		
 		final Class<?> originalClazz = clazz;
-
+		
 		while (clazz != Object.class && clazz != null && !GDSField.nonDSClasses.contains(clazz) && !clazz.isPrimitive() && clazz != Class.class) {
 			Field[] classfields = clazz.getDeclaredFields();
 			try {
@@ -91,14 +91,14 @@ public class GDSClass {
 			} catch (Exception ex) {
 				//System.out.println("Error trying to setAccessible for class: " + clazz + " " + ex.toString());
 			}
-
+			
 			for (Field field : classfields) {
 				if (GDSField.createIDField(field) != null) {
 					hasIdFieldMap.put(clazz, true);
 					return true;
 				}
 			}
-
+			
 			clazz = clazz.getSuperclass();
 		}
 		hasIdFieldMap.put(originalClazz, false);
@@ -181,7 +181,7 @@ public class GDSClass {
 	public static GDSResult<?> onPreDelete(GDS gds, Object pojo) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		return callAnnotatedMethod(gds, PreDelete.class, hasPreDeleteMap, pojo);
 	}
-
+	
 	public static void clearReflection() {
 		hasIdFieldMap.clear();
 		hasPreSaveMap.clear();
@@ -189,5 +189,5 @@ public class GDSClass {
 		hasPreDeleteMap.clear();
 		constructorMap.clear();
 	}
-
+	
 }

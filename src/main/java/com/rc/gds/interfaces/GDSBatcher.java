@@ -1,7 +1,6 @@
 package com.rc.gds.interfaces;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.rc.gds.GDSAsyncImpl;
@@ -15,7 +14,7 @@ public class GDSBatcher {
 		singleResults = input.toArray(new GDSResult[0]);
 		multiResults = null;
 	}
-
+	
 	public GDSBatcher(GDSResult<?>... input) {
 		singleResults = input;
 		multiResults = null;
@@ -37,21 +36,9 @@ public class GDSBatcher {
 		final AtomicInteger total = new AtomicInteger(0);
 		final GDSAsyncImpl<Boolean> asyncResult = new GDSAsyncImpl<>();
 		
-		final GDSCallback singleCallback = new GDSCallback() {
-			
-			@Override
-			public void onSuccess(Object t, Throwable err) {
-				handleSuccess(current, total, asyncResult, err);
-			}
-		};
-		final GDSResultListReceiver multiCallback = new GDSResultListReceiver() {
-			
-			@Override
-			public void success(List list, Throwable err) {
-				handleSuccess(current, total, asyncResult, err);
-			}
-		};
-
+		final GDSCallback singleCallback = (t, err) -> handleSuccess(current, total, asyncResult, err);
+		final GDSResultListReceiver multiCallback = (list, err) -> handleSuccess(current, total, asyncResult, err);
+		
 		if (singleResults != null) {
 			total.addAndGet(singleResults.length);
 			for (GDSResult<?> result : singleResults)
@@ -65,10 +52,10 @@ public class GDSBatcher {
 		
 		if (total.get() == 0)
 			asyncResult.onSuccess(true, null);
-
+		
 		return asyncResult;
 	}
-
+	
 	protected void handleSuccess(AtomicInteger current, AtomicInteger total, GDSAsyncImpl<Boolean> result, Throwable err) {
 		if (err != null) {
 			result.onSuccess(false, err);
@@ -76,5 +63,5 @@ public class GDSBatcher {
 			result.onSuccess(true, err);
 		}
 	}
-
+	
 }

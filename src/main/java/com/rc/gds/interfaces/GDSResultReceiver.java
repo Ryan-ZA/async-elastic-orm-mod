@@ -21,5 +21,5 @@ public interface GDSResultReceiver<T> {
 	 * @param err
 	 */
 	public void onError(Throwable err);
-
+	
 }

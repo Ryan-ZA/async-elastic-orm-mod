@@ -10,12 +10,12 @@ import com.rc.gds.GDSClass;
 
 @GwtIncompatible("Cannot create keys on client yet")
 public class Key implements Serializable {
-
+	
 	private static final long serialVersionUID = 1L;
-
+	
 	public String kind, id;
 	public Long version;
-
+	
 	public Key() {
 	}
 	
@@ -28,17 +28,17 @@ public class Key implements Serializable {
 		this.id = id;
 		kind = GDSClass.getKind(clazz);
 	}
-
+	
 	public Key(String kind, String id) {
 		this.id = id;
 		this.kind = kind;
 	}
-
+	
 	public Key(String kind, String id, long version) {
 		this(kind, id);
 		this.version = version;
 	}
-
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -76,7 +76,7 @@ public class Key implements Serializable {
 	public void setKind(String kind) {
 		this.kind = kind;
 	}
-
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -97,5 +97,5 @@ public class Key implements Serializable {
 	public String toString() {
 		return "Key [kind=" + kind + ", id=" + id + ", version=" + version + "]";
 	}
-
+	
 }

@@ -1,7 +1,7 @@
 package com.rc.gds;
 
 public class TestEmbed {
-
+	
 	int x;
 	Integer y;
 	long z;

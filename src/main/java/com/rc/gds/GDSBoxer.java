@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 class GDSBoxer {
-
+	
 	public static Collection<Object> boxArray(Object array) {
 		Collection<Object> collection = new ArrayList<Object>();
 		Class<?> compClass = array.getClass().getComponentType();
@@ -62,7 +62,7 @@ class GDSBoxer {
 		}
 		return collection;
 	}
-
+	
 	@SuppressWarnings("rawtypes")
 	public static Object createBestFitCollection(Class<?> clazz) throws InstantiationException, IllegalAccessException {
 		if (Modifier.isAbstract(clazz.getModifiers()) || clazz.isInterface()) {
@@ -92,9 +92,9 @@ class GDSBoxer {
 			} else {
 				throw new RuntimeException("Could not create a concrete map for interface " + clazz.getName());
 			}
-		} else {			
+		} else {
 			return clazz.newInstance();
 		}
 	}
-
+	
 }

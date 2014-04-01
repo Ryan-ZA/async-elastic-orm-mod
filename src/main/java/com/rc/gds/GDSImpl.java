@@ -3,14 +3,12 @@ package com.rc.gds;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.node.Node;
 
 import com.rc.es.ESClientHolder;
 import com.rc.gds.interfaces.GDS;
-import com.rc.gds.interfaces.GDSCallback;
 import com.rc.gds.interfaces.GDSDeleter;
 import com.rc.gds.interfaces.GDSLoader;
 import com.rc.gds.interfaces.GDSMultiResult;
@@ -29,7 +27,7 @@ public class GDSImpl implements GDS {
 	private Client client;
 	
 	//private String cluster;
-
+	
 	public GDSImpl(boolean isclient) {
 		client = ESClientHolder.getClient(isclient, "gloopsh");
 	}
@@ -132,7 +130,7 @@ public class GDSImpl implements GDS {
 		GDSField.clearReflection();
 		ESMapCreator.clearReflection();
 	}
-
+	
 	public static synchronized void shutdownAllNodes() {
 		for (Client client : ESClientHolder.clientMap.values()) {
 			client.close();
@@ -144,7 +142,7 @@ public class GDSImpl implements GDS {
 		ESClientHolder.nodeList.clear();
 		ESClientHolder.clientMap.clear();
 	}
-
+	
 	@Override
 	public GDSResult<Object> load(Key key) {
 		return load().fetch(key);
@@ -155,13 +153,13 @@ public class GDSImpl implements GDS {
 		GDSSaver gdsSaver = new GDSSaverImpl(this);
 		return gdsSaver.result(t);
 	}
-
+	
 	@Override
 	public <T> GDSResult<Boolean> delete(T t) {
 		GDSDeleter gdsDeleter = new GDSDeleterImpl(this);
 		return gdsDeleter.delete(t);
 	}
-
+	
 	@Override
 	public <T> GDSResult<T> load(Class<T> clazz, String id) {
 		return load().fetch(clazz, id);
@@ -177,22 +175,17 @@ public class GDSImpl implements GDS {
 		}
 		
 		try {
-			load().fetchBatch(keys).later(new GDSCallback<Map<Key, Object>>() {
-				
-				@SuppressWarnings("unchecked")
-				@Override
-				public void onSuccess(Map<Key, Object> map, Throwable err) {
-					if (err != null) {
-						result.onSuccess(null, err);
-						return;
-					}
-					
-					final List<T> resultList = new ArrayList<>();
-					for (Key key : keys) {
-						resultList.add((T) map.get(key));
-					}
-					result.onSuccess(resultList, null);
+			load().fetchBatch(keys).later((map, err) -> {
+				if (err != null) {
+					result.onSuccess(null, err);
+					return;
 				}
+				
+				final List<T> resultList = new ArrayList<>();
+				for (Key key : keys) {
+					resultList.add((T) map.get(key));
+				}
+				result.onSuccess(resultList, null);
 			});
 		} catch (Exception e) {
 			result.onSuccess(null, e);
@@ -205,5 +198,5 @@ public class GDSImpl implements GDS {
 	public <T> GDSMultiResult<T> fetchAll(Class<T> clazz) {
 		return query(clazz).result();
 	}
-
+	
 }

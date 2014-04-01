@@ -22,16 +22,16 @@ import com.rc.gds.interfaces.GDSResult;
 import com.rc.gds.interfaces.Key;
 
 public class BasicTest {
-
+	
 	private static GDSImpl getGDS() {
 		return new GDSImpl(false, "gdstest");
 	}
-
+	
 	@Before
 	public void testSetup() {
 		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
 	}
-
+	
 	@After
 	public void testCleanup() {
 		getGDS().getClient().admin().indices().prepareDelete("*").execute().actionGet();
@@ -40,7 +40,7 @@ public class BasicTest {
 	private void refreshIndex() {
 		getGDS().getClient().admin().indices().prepareRefresh().execute().actionGet();
 	}
-
+	
 	@Test
 	public void testEmbed() {
 		TestEmbedHolder embedHolder = new TestEmbedHolder();
@@ -64,7 +64,7 @@ public class BasicTest {
 		assertEquals(loaded.testEmbed2.z, 99L);
 		assertEquals(loaded.testEmbed1.insideEmbed.zz, new Long(109L));
 	}
-
+	
 	@Test
 	public void testEmbedList() {
 		TestEmbedListHolder embedHolder = new TestEmbedListHolder();
@@ -88,7 +88,7 @@ public class BasicTest {
 			assertEquals(null, embed.insideEmbed);
 		}
 	}
-
+	
 	@Test
 	public void testEmbedMap() {
 		TestEmbedMapHolder embedHolder = new TestEmbedMapHolder();
@@ -110,13 +110,13 @@ public class BasicTest {
 			assertEquals(null, embed.insideEmbed);
 		}
 	}
-
+	
 	@Test
 	public void testList() {
-
+		
 		Random random = new Random();
 		int num = random.nextInt();
-
+		
 		TestParentList testParentList = new TestParentList();
 		testParentList.name = "testParentList" + num;
 		testParentList.testChildList = new ArrayList<>();
@@ -126,7 +126,7 @@ public class BasicTest {
 			testParentList.testChildList.add(testChild);
 		}
 		testParentList.testChildArr = testParentList.testChildList.subList(0, 20).toArray(new TestChild[0]);
-
+		
 		getGDS().save().result(testParentList).now();
 		System.out.println("DDD");
 		
@@ -134,18 +134,18 @@ public class BasicTest {
 		
 		List<TestChild> queryList = getGDS().query(TestChild.class).asList();
 		assertEquals(2500, queryList.size());
-
+		
 		TestParentList fetchParent = getGDS().load().fetch(TestParentList.class, testParentList.id).now();
 		assertEquals(20, fetchParent.testChildArr.length);
 		assertEquals(2500, fetchParent.testChildList.size());
-
+		
 		for (int i = 0; i < 2500; i++) {
 			assertNotNull(fetchParent.testChildList.get(i).name);
 		}
 		
 		assertEquals(2500, fetchParent.testChildList.size());
 	}
-
+	
 	@Test
 	public void testMap() {
 		
@@ -171,7 +171,7 @@ public class BasicTest {
 			assertEquals("child" + i, fetchParent.testChildMap.get("key" + i).name);
 		}
 	}
-
+	
 	@Test
 	public void testBasicMaps() {
 		TestBasicMap map = new TestBasicMap();
@@ -179,20 +179,20 @@ public class BasicTest {
 		map.testMap = new HashMap<>();
 		map.testMap.put("Test1", 332.131);
 		map.testMap.put("t2", -8.0);
-
+		
 		getGDS().save().result(map).now();
-
+		
 		TestBasicMap map2 = getGDS().load().fetch(TestBasicMap.class, map.id).now();
 		
 		assertEquals(map.testMap.size(), map2.testMap.size());
 		assertEquals(map.testMap.get("Test1"), map2.testMap.get("Test1"));
 		assertEquals(map.testMap.get("t2"), map2.testMap.get("t2"));
-
+		
 		map.testMap.put("z", 5.5);
 		
 		assertEquals(null, map2.testMap.get("z"));
 	}
-
+	
 	@Test
 	public void testPoly() {
 		TestParentPoly parentPoly = new TestParentPoly();
@@ -218,7 +218,7 @@ public class BasicTest {
 		assertEquals(loadChildPoly1.id, loadChildPoly2.id);
 		assertEquals(loadChildPoly1.bytes.get(2), loadChildPoly2.bytes.get(2));
 	}
-
+	
 	@Test
 	public void testQuery() {
 		Random random = new Random();
@@ -234,7 +234,7 @@ public class BasicTest {
 		getGDS().save().result(testParent).now();
 		
 		refreshIndex();
-
+		
 		List<TestChild> list = getGDS().query(TestChild.class)
 				//.filter(FilterBuilders.termFilter("name", "child" + num))
 				.asList();
@@ -243,7 +243,7 @@ public class BasicTest {
 		assertEquals(testChild.id, list.get(0).id);
 		assertEquals(testChild.name, list.get(0).name);
 	}
-
+	
 	@Test
 	public void testQueryMultiple() {
 		for (int i = 0; i < 1000; i++) {
@@ -263,42 +263,42 @@ public class BasicTest {
 		//assertEquals("child12", list.get(12).name);
 		//assertEquals("child22", list.get(22).name);
 	}
-
+	
 	@Test
 	public void testSave() {
 		TestParent testParent = new TestParent();
 		TestChild testChild = new TestChild();
-
+		
 		testParent.name = "parent1";
 		testChild.name = "child1";
 		testParent.testChild = testChild;
-
+		
 		getGDS().save().result(testParent).now();
 		
 		assertNotNull(testParent.id);
 		assertNotNull(testChild.id);
-
+		
 		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
 		assertEquals(testParent.name, fetchParent.name);
 		assertEquals(testParent.testChild.name, fetchParent.testChild.name);
 	}
-
+	
 	@Test
 	public void testSubClass() {
 		TestSubClass test = new TestSubClass();
 		test.name = "parent";
 		test.theSubClass = new TheSubClass();
 		test.theSubClass.i = 867;
-
+		
 		getGDS().save().result(test).now();
-
+		
 		TestSubClass load = getGDS().load().fetch(TestSubClass.class, test.id).now();
 		
 		assertNotNull(load.theSubClass);
 		
 		assertEquals(867, load.theSubClass.i);
 	}
-
+	
 	@Test
 	public void testMultiSave() {
 		TestParent testParent = new TestParent();
@@ -321,22 +321,22 @@ public class BasicTest {
 			getGDS().save().result(fetchParent).now();
 		}
 	}
-
+	
 	@Test
 	public void testAlwaysPersist() {
 		TestParent testParent = new TestParent();
 		TestChild testChild = new TestChild();
-
+		
 		testParent.name = "parent1";
 		testChild.name = "child1";
 		testParent.testChild = testChild;
-
+		
 		getGDS().save().result(testParent).now();
-
+		
 		testChild.name = "child2";
-
+		
 		getGDS().save().result(testParent).now();
-
+		
 		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
 		assertEquals(testParent.testChild.name, fetchParent.testChild.name);
 	}
@@ -356,10 +356,10 @@ public class BasicTest {
 		tc3.name = "tc3";
 		tc3.deepChild = tc4;
 		tc4.name = "tc4";
-
+		
 		testParent.name = "parent1";
 		testParent.testChild = tc1;
-
+		
 		getGDS().save().result(testParent).now();
 		
 		assertNotNull(testParent.id);
@@ -367,7 +367,7 @@ public class BasicTest {
 		assertNotNull(tc2.id);
 		assertNotNull(tc3.id);
 		assertNotNull(tc4.id);
-
+		
 		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
 		TestChildChild f1 = (TestChildChild) fetchParent.testChild;
 		TestChildChild f2 = f1.deepChild;
@@ -417,7 +417,7 @@ public class BasicTest {
 		assertNotNull(tc4.id);
 		
 		System.out.println(tcshared.id);
-
+		
 		TestParent fetchParent = getGDS().load().fetch(TestParent.class, testParent.id).now();
 		TestChildChild f1 = (TestChildChild) fetchParent.testChild;
 		TestChildChild f2 = f1.deepChild;
@@ -511,10 +511,10 @@ public class BasicTest {
 		assertNotNull(testParentMap.id);
 		for (TestChild testChild : testParentMap.testChildMap.values())
 			assertNotNull(testChild.id);
-
+		
 		TestParentMap fetchParent = getGDS().load().fetch(TestParentMap.class, testParentMap.id).now();
 		assertEquals(30, fetchParent.testChildMap.size());
-
+		
 		for (int i = 0; i < 10; i++) {
 			assertEquals("child" + i, fetchParent.testChildMap.get("key " + i).name);
 			assertEquals("child" + i, fetchParent.testChildMap.get("key2 " + i).name);
@@ -621,10 +621,10 @@ public class BasicTest {
 		TestManual fetchManual = getGDS().load(TestManual.class, testManual.id).now();
 		assertNotNull(fetchManual);
 		assertNotNull(fetchManual.manualChild);
-
+		
 		TestChild testChild2 = (TestChild) fetchManual.manualChild.get(getGDS()).now();
 		
 		assertEquals(testChild.id, testChild2.id);
 	}
-
+	
 }

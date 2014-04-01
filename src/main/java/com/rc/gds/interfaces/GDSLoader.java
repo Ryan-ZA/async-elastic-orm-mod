@@ -32,5 +32,5 @@ public interface GDSLoader {
 	 * @throws Exception
 	 */
 	public abstract GDSResult<Map<Key, Object>> fetchBatch(Iterable<Key> keys) throws Exception;
-
+	
 }

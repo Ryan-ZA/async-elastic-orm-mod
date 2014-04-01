@@ -73,7 +73,7 @@ public interface GDS {
 	 * @return A new GDSSaver that can be used to save any collection of pojos.
 	 */
 	public abstract GDSSaver save();
-
+	
 	/**
 	 * @param <T>
 	 * @return Save a single pojo

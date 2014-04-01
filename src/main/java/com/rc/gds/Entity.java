@@ -7,32 +7,32 @@ import java.util.Map;
 import com.rc.gds.interfaces.Key;
 
 class Entity implements PropertyContainer, Serializable {
-
+	
 	private static final long serialVersionUID = 1L;
-
+	
 	String id;
 	String classKind;
 	Long version;
 	Map<String, Object> dbObject = new HashMap<>();
-
+	
 	public Entity() {
 	}
-
+	
 	public Entity(String classKind, String specialID) {
 		this.classKind = classKind;
 		id = specialID;
 	}
-
+	
 	public Entity(String classKind) {
 		this.classKind = classKind;
 	}
-
+	
 	public Entity(String classKind, String id, Map<String, Object> dbObject) {
 		this.id = id;
 		this.classKind = classKind;
 		this.dbObject = dbObject;
 	}
-
+	
 	@Override
 	public void setProperty(String key, Object val) {
 		if (val instanceof Key) {
@@ -43,30 +43,30 @@ class Entity implements PropertyContainer, Serializable {
 			dbObject.put(key, val);
 		}
 	}
-
+	
 	public String getKind() {
 		return classKind;
 	}
-
+	
 	@Override
 	public Map<String, Object> getDBDbObject() {
 		return dbObject;
 	}
-
+	
 	public Key getKey() {
 		return new Key(classKind, id);
 	}
-
+	
 	@Override
 	public Object getProperty(String key) {
 		return dbObject.get(key);
 	}
-
+	
 	@Override
 	public boolean hasProperty(String key) {
 		return dbObject.containsKey(key);
 	}
-
+	
 	public Long getVersion() {
 		return version;
 	}
@@ -74,5 +74,5 @@ class Entity implements PropertyContainer, Serializable {
 	public void setVersion(Long version) {
 		this.version = version;
 	}
-
+	
 }

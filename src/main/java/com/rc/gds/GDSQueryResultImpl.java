@@ -9,7 +9,6 @@ import java.util.concurrent.Executors;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
-import com.rc.gds.interfaces.GDSCallback;
 import com.rc.gds.interfaces.GDSMultiResult;
 import com.rc.gds.interfaces.GDSResult;
 import com.rc.gds.interfaces.GDSResultListReceiver;
@@ -18,7 +17,7 @@ import com.rc.gds.interfaces.GDSResultReceiver;
 public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 	
 	private static final int MAX_DEPTH = 100;
-
+	
 	GDSImpl gds;
 	Class<T> clazz;
 	GDSLoaderImpl loader;
@@ -36,19 +35,16 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 	
 	@Override
 	public void later(final GDSResultReceiver<T> resultReceiver) {
-		sr.later(new GDSCallback<SearchResponse>() {
-			
-			@Override
-			public void onSuccess(SearchResponse searchResponse, Throwable err) {
-				if (err != null) {
-					resultReceiver.onError(err);
-				} else {
-					doFetch(resultReceiver, searchResponse.getHits().iterator());
-				}
+		sr.later((searchResponse, err) -> {
+			if (err != null) {
+				resultReceiver.onError(err);
+			} else {
+				doFetch(resultReceiver, searchResponse.getHits().iterator());
 			}
 		});
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void doFetch(final GDSResultReceiver<T> resultReceiver, final Iterator<SearchHit> iterator) {
 		Entity entity = null;
 		SearchHit hit = null;
@@ -69,41 +65,32 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 		
 		final List<GDSLink> links = new ArrayList<GDSLink>();
 		try {
-			loader.entityToPOJO(entity, hit.getId(), links).later(new GDSCallback<Object>() {
-				
-				@Override
-				public void onSuccess(final Object pojo, Throwable err) {
-					try {
-						if (err != null)
-							throw err;
-
-						loader.fetchLinks(links).later(new GDSCallback<List<GDSLink>>() {
-							
-							@SuppressWarnings("unchecked")
-							@Override
-							public void onSuccess(List<GDSLink> t, Throwable err) {
-								if (err != null) {
-									err.printStackTrace();
-									shutdownDeepStackExecutor();
-									resultReceiver.onError(err);
-								} else {
-									if (resultReceiver.receiveNext((T) pojo)) {
-										sendNext(resultReceiver, iterator);
-									} else {
-										shutdownDeepStackExecutor();
-										resultReceiver.finished();
-									}
-								}
-							}
-						});
-					} catch (Throwable e) {
-						//resultReceiver.onError(e);
-						if (resultReceiver.receiveNext(null)) {
-							sendNext(resultReceiver, iterator);
-						} else {
+			loader.entityToPOJO(entity, hit.getId(), links).later((pojo, err1) -> {
+				try {
+					if (err1 != null)
+						throw err1;
+					
+					loader.fetchLinks(links).later((t, err2) -> {
+						if (err2 != null) {
+							err2.printStackTrace();
 							shutdownDeepStackExecutor();
-							resultReceiver.finished();
+							resultReceiver.onError(err2);
+						} else {
+							if (resultReceiver.receiveNext((T) pojo)) {
+								sendNext(resultReceiver, iterator);
+							} else {
+								shutdownDeepStackExecutor();
+								resultReceiver.finished();
+							}
 						}
+					});
+				} catch (Throwable e) {
+					//resultReceiver.onError(e);
+					if (resultReceiver.receiveNext(null)) {
+						sendNext(resultReceiver, iterator);
+					} else {
+						shutdownDeepStackExecutor();
+						resultReceiver.finished();
 					}
 				}
 			});
@@ -200,16 +187,10 @@ public class GDSQueryResultImpl<T> implements GDSMultiResult<T> {
 			// Temporary work around for depth getting too great on the stack
 			if (deepStackExecutor == null)
 				deepStackExecutor = Executors.newSingleThreadExecutor();
-			deepStackExecutor.submit(new Runnable() {
-
-				@Override
-				public void run() {
-					doFetch(resultReceiver, iterator);
-				}
-			});
+			deepStackExecutor.submit(() -> doFetch(resultReceiver, iterator));
 		} else {
 			doFetch(resultReceiver, iterator);
 		}
 	}
-
+	
 }

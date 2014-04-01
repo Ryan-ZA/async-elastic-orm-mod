@@ -17,7 +17,6 @@ import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 
 import com.rc.gds.annotation.AlwaysPersist;
 import com.rc.gds.interfaces.GDSBatcher;
-import com.rc.gds.interfaces.GDSCallback;
 import com.rc.gds.interfaces.GDSResult;
 import com.rc.gds.interfaces.GDSSaver;
 import com.rc.gds.interfaces.Key;
@@ -47,31 +46,23 @@ public class GDSSaverImpl implements GDSSaver {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private GDSResult<Entity> createEntity(final Object pojo, final boolean isEmbedded) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		final GDSAsyncImpl result = new GDSAsyncImpl<>();
-		result.runOnStart = new Runnable() {
-			
-			@Override
-			public void run() {
-				try {
-					GDSResult<?> preSaveResult = GDSClass.onPreSave(gds, pojo);
-					if (preSaveResult == null) {
-						createEntityInt(pojo, isEmbedded).later(result);
-					} else {
-						preSaveResult.later(new GDSCallback() {
-							
-							@Override
-							public void onSuccess(Object t, Throwable err) {
-								try {
-									createEntityInt(pojo, isEmbedded).later(result);
-								} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
-									result.onSuccess(null, e);
-								}
-							}
-						});
-					}
-					
-				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					result.onSuccess(null, e);
+		result.runOnStart = () -> {
+			try {
+				GDSResult<?> preSaveResult = GDSClass.onPreSave(gds, pojo);
+				if (preSaveResult == null) {
+					createEntityInt(pojo, isEmbedded).later(result);
+				} else {
+					preSaveResult.later((t, err) -> {
+						try {
+							createEntityInt(pojo, isEmbedded).later(result);
+						} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+							result.onSuccess(null, e);
+						}
+					});
 				}
+				
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				result.onSuccess(null, e);
 			}
 		};
 		return ESMapCreator.ensureIndexCreated(gds, pojo.getClass(), result);
@@ -123,15 +114,11 @@ public class GDSSaverImpl implements GDSSaver {
 		}
 		
 		final GDSAsyncImpl<Entity> result = new GDSAsyncImpl<>();
-		new GDSBatcher(fieldResults.values()).onAllComplete().later(new GDSCallback<Boolean>() {
+		new GDSBatcher(fieldResults.values()).onAllComplete().later((t, err) -> {
+			for (Entry<GDSField, GDSResult<?>> entry : fieldResults.entrySet())
+				setEntityProperty(entity, entry.getKey(), entry.getValue().now());
 			
-			@Override
-			public void onSuccess(Boolean t, Throwable err) {
-				for (Entry<GDSField, GDSResult<?>> entry : fieldResults.entrySet())
-					setEntityProperty(entity, entry.getKey(), entry.getValue().now());
-				
-				result.onSuccess(entity, err);
-			}
+			result.onSuccess(entity, err);
 		});
 		return result;
 	}
@@ -143,7 +130,7 @@ public class GDSSaverImpl implements GDSSaver {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private GDSResult<Object> addFieldToEntity(Object pojo, GDSField field, PropertyContainer entity) throws IllegalArgumentException, IllegalAccessException,
-			InvocationTargetException {
+	InvocationTargetException {
 		if (field.fieldName.equals(GDSField.GDS_ID_FIELD))
 			return null;
 		
@@ -180,7 +167,7 @@ public class GDSSaverImpl implements GDSSaver {
 	}
 	
 	private GDSResult<Collection<?>> storeCollectionOfPOJO(GDSField field, Collection<?> fieldValue) throws IllegalArgumentException, IllegalAccessException,
-			InvocationTargetException {
+	InvocationTargetException {
 		
 		final List<GDSResult<?>> resultList = new ArrayList<>();
 		
@@ -197,15 +184,11 @@ public class GDSSaverImpl implements GDSSaver {
 		}
 		
 		final GDSAsyncImpl<Collection<?>> realResult = new GDSAsyncImpl<>();
-		new GDSBatcher(resultList).onAllComplete().later(new GDSCallback<Boolean>() {
-			
-			@Override
-			public void onSuccess(Boolean t, Throwable err) {
-				Collection<Object> collection = new ArrayList<>();
-				for (GDSResult<?> result : resultList)
-					collection.add(convert(result.now()));
-				realResult.onSuccess(collection, err);
-			}
+		new GDSBatcher(resultList).onAllComplete().later((t, err) -> {
+			Collection<Object> collection = new ArrayList<>();
+			for (GDSResult<?> result : resultList)
+				collection.add(convert(result.now()));
+			realResult.onSuccess(collection, err);
 		});
 		return realResult;
 	}
@@ -219,7 +202,7 @@ public class GDSSaverImpl implements GDSSaver {
 			return val;
 		}
 	}
-
+	
 	private GDSResult<EmbeddedEntity> storeMapOfPOJO(GDSField field, Map<?, ?> fieldValue) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		
 		final EmbeddedEntity mapEntity = new EmbeddedEntity();
@@ -264,17 +247,13 @@ public class GDSSaverImpl implements GDSSaver {
 		
 		final GDSAsyncImpl<EmbeddedEntity> realResult = new GDSAsyncImpl<>();
 		
-		new GDSBatcher(allResults).onAllComplete().later(new GDSCallback<Boolean>() {
-			
-			@Override
-			public void onSuccess(Boolean t, Throwable err) {
-				for (int i = 0; i < keyResults.size(); i++) {
-					int ind = i + 1;
-					mapEntity.setProperty("K" + ind, convert(keyResults.get(i).now()));
-					mapEntity.setProperty("V" + ind, convert(valResults.get(i).now()));
-				}
-				realResult.onSuccess(mapEntity, err);
+		new GDSBatcher(allResults).onAllComplete().later((t, err) -> {
+			for (int i = 0; i < keyResults.size(); i++) {
+				int ind = i + 1;
+				mapEntity.setProperty("K" + ind, convert(keyResults.get(i).now()));
+				mapEntity.setProperty("V" + ind, convert(valResults.get(i).now()));
 			}
+			realResult.onSuccess(mapEntity, err);
 		});
 		return realResult;
 	}
@@ -326,47 +305,32 @@ public class GDSSaverImpl implements GDSSaver {
 		final GDSAsyncImpl<Key> result = new GDSAsyncImpl<>();
 		
 		try {
-			createEntity(pojo, false).later(new GDSCallback<Entity>() {
-				
-				@Override
-				public void onSuccess(Entity entity, Throwable err) {
-					if (err == null) {
-						saveToDatastore(entity, isUpdate).later(new GDSCallback<Key>() {
+			createEntity(pojo, false).later((entity, err1) -> {
+				if (err1 == null) {
+					saveToDatastore(entity, isUpdate).later((key, err2) -> {
+						try {
+							if (err2 != null)
+								throw err2;
 							
-							@SuppressWarnings({ "rawtypes", "unchecked" })
-							@Override
-							public void onSuccess(final Key key, Throwable err) {
-								try {
-									if (err != null)
-										throw err;
-									
-									Map<String, GDSField> fieldMap = GDSField.createMapFromObject(pojo);
-									GDSField idfield = fieldMap.get(GDSField.GDS_ID_FIELD);
-									idfield.field.set(pojo, key.getId());
-									GDSField verField = fieldMap.get(GDSField.GDS_VERSION_FIELD);
-									if (verField != null)
-										verField.field.setLong(pojo, key.version);
-									
-									GDSResult<?> postSaveResult = GDSClass.onPostSave(gds, pojo);
-									if (postSaveResult == null) {
-										result.onSuccess(key, null);
-									} else {
-										postSaveResult.later(new GDSCallback() {
-											
-											@Override
-											public void onSuccess(Object t, Throwable err) {
-												result.onSuccess(key, err);
-											}
-										});
-									}
-								} catch (Throwable e) {
-									result.onSuccess(null, e);
-								}
+							Map<String, GDSField> fieldMap = GDSField.createMapFromObject(pojo);
+							GDSField idfield = fieldMap.get(GDSField.GDS_ID_FIELD);
+							idfield.field.set(pojo, key.getId());
+							GDSField verField = fieldMap.get(GDSField.GDS_VERSION_FIELD);
+							if (verField != null)
+								verField.field.setLong(pojo, key.version);
+							
+							GDSResult<?> postSaveResult = GDSClass.onPostSave(gds, pojo);
+							if (postSaveResult == null) {
+								result.onSuccess(key, null);
+							} else {
+								postSaveResult.later((t, err) -> result.onSuccess(key, err));
 							}
-						});
-					} else {
-						result.onSuccess(null, err);
-					}
+						} catch (Throwable e) {
+							result.onSuccess(null, e);
+						}
+					});
+				} else {
+					result.onSuccess(null, err1);
 				}
 			});
 		} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
